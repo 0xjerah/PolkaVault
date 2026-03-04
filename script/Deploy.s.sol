@@ -20,6 +20,10 @@ contract DeployPolkaVault is Script {
         vault.setUnbondingPeriod(1 hours);
         console.log("Unbonding period set to 1 hour for testnet");
 
+        // Set keeper fee to 0.5% — paid to whoever calls compound()
+        vault.setKeeperFee(50);
+        console.log("Keeper fee set to 0.5% (50 bps)");
+
         vm.stopBroadcast();
     }
 }

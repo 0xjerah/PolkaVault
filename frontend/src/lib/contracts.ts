@@ -1,8 +1,15 @@
 // Deployed to Polkadot Hub Testnet (chain 420420417)
-export const POLKAVAULT_ADDRESS = "0x19faeccEe3eefE31736956EF2bc9B7436beC5BD2" as const;
+export const POLKAVAULT_ADDRESS = "0xbcd7bFCd5224a18aB306923E145aa7e8ba4f5e04" as const;
 
 export const POLKAVAULT_ABI = [
   // ── Write ────────────────────────────────────────────────────
+  {
+    type: "function",
+    name: "setKeeperFee",
+    inputs: [{ name: "bps", type: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
   {
     type: "function",
     name: "deposit",
@@ -55,6 +62,34 @@ export const POLKAVAULT_ABI = [
     name: "owner",
     inputs: [],
     outputs: [{ name: "", type: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "keeperFeeBps",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "lastApyBps",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "lastCompoundTime",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "lastCompoundRate",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
   },
   {
@@ -249,6 +284,20 @@ export const POLKAVAULT_ABI = [
       { name: "newRate",        type: "uint256", indexed: false },
       { name: "newTotalStaked", type: "uint256", indexed: false },
     ],
+  },
+  {
+    type: "event",
+    name: "KeeperRewarded",
+    inputs: [
+      { name: "keeper",     type: "address", indexed: true  },
+      { name: "fee",        type: "uint256", indexed: false },
+      { name: "compounded", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "KeeperFeeUpdated",
+    inputs: [{ name: "feeBps", type: "uint256", indexed: false }],
   },
   {
     type: "event",

@@ -85,7 +85,7 @@ sendCrossChain(shares, destAccount)
 
 ## Smart Contract
 
-**Address:** [`0x19faeccEe3eefE31736956EF2bc9B7436beC5BD2`](https://blockscout-testnet.polkadot.io/address/0x19faeccEe3eefE31736956EF2bc9B7436beC5BD2)
+**Address:** [`0xbcd7bFCd5224a18aB306923E145aa7e8ba4f5e04`](https://blockscout-testnet.polkadot.io/address/0xbcd7bFCd5224a18aB306923E145aa7e8ba4f5e04)
 **Network:** Polkadot Hub Testnet (chain ID `420420417`)
 
 ### Key Functions

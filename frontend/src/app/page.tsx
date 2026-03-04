@@ -42,6 +42,20 @@ function fmt(wei: bigint, dp = 4): string {
   return `${int}.${dec.padEnd(dp, "0").slice(0, dp)}`;
 }
 function fmtRate(r: bigint) { return (Number(r) / 1e18).toFixed(6); }
+// Safely parse a user-typed amount to bigint — handles scientific notation (e.g. "2e3")
+function parseAmt(val: string): bigint {
+  if (!val) return 0n;
+  const n = Number(val);
+  if (!isFinite(n) || n <= 0) return 0n;
+  try {
+    return parseEther(n.toFixed(18).replace(/\.?0+$/, "") || "0");
+  } catch { return 0n; }
+}
+
+function fmtApy(bps: bigint | undefined): string | null {
+  if (bps === undefined || bps === 0n) return null;
+  return `${(Number(bps) / 100).toFixed(2)}%`;
+}
 function timeUntil(ts: bigint): string {
   const diff = Number(ts) - Math.floor(Date.now() / 1000);
   if (diff <= 0) return "Ready to claim";
@@ -156,9 +170,16 @@ function VaultStats() {
     functionName: "uniqueDepositors",
     query: { refetchInterval: 15_000 },
   });
+  const { data: apyBps } = useReadContract({
+    address: POLKAVAULT_ADDRESS,
+    abi: POLKAVAULT_ABI,
+    functionName: "lastApyBps",
+    query: { refetchInterval: 30_000 },
+  });
 
-  const [rate, staked, , supply] = (stats as [bigint, bigint, bigint, bigint]) ?? [0n, 0n, 0n, 0n];
+  const [rate, staked] = (stats as [bigint, bigint, bigint, bigint]) ?? [0n, 0n, 0n, 0n];
   const rateHistory = useRateHistory(rate);
+  const realApy = fmtApy(apyBps as bigint | undefined);
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-10 max-w-3xl mx-auto w-full">
@@ -191,12 +212,16 @@ function VaultStats() {
         <p className="text-[10px] text-gray-600 mt-1">unique wallets</p>
       </div>
 
-      {/* Est. APY */}
+      {/* Realized APY */}
       <div className="rounded-2xl bg-[#0d0d18] border border-white/[0.08] p-4 text-center shadow-lg hover:border-yellow-500/20 transition-all">
         <Zap className="w-4 h-4 mx-auto mb-2 text-yellow-400" />
-        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Est. APY</p>
-        <p className="font-black text-base leading-none text-yellow-300">~12–15%</p>
-        <p className="text-[10px] text-gray-600 mt-1">native yield</p>
+        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Realized APY</p>
+        <p className="font-black text-base leading-none text-yellow-300">
+          {realApy ?? "~12–15%"}
+        </p>
+        <p className="text-[10px] text-gray-600 mt-1">
+          {realApy ? "on-chain · last compound" : "est. · awaiting compound"}
+        </p>
       </div>
     </div>
   );
@@ -364,7 +389,7 @@ function DepositPanel({ onSuccess, nativeBal }: { onSuccess: () => void; nativeB
 
   const { data: sharesOut } = useReadContract({
     address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI, functionName: "sharesForDot",
-    args: Number(amount) > 0 ? [parseEther(amount)] : undefined,
+    args: Number(amount) > 0 ? [parseAmt(amount)] : undefined,
     query: { enabled: Number(amount) > 0 },
   });
 
@@ -381,7 +406,7 @@ function DepositPanel({ onSuccess, nativeBal }: { onSuccess: () => void; nativeB
           : undefined} />
       <TxButton
         onClick={() => writeContract({ address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI,
-          functionName: "deposit", value: parseEther(amount || "0") })}
+          functionName: "deposit", value: parseAmt(amount) })}
         disabled={!amount || Number(amount) <= 0} isPending={isPending || isConfirming}
         isSuccess={isSuccess}
         gradientClass="bg-gradient-to-r from-pink-600 to-pink-500 text-white shadow-pink-500/25 hover:shadow-pink-500/40 hover:from-pink-500 hover:to-pink-400"
@@ -405,7 +430,7 @@ function WithdrawPanel({ onSuccess, address, stDotBal }: {
   });
   const { data: dotOut } = useReadContract({
     address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI, functionName: "dotForShares",
-    args: Number(amount) > 0 ? [parseEther(amount)] : undefined,
+    args: Number(amount) > 0 ? [parseAmt(amount)] : undefined,
     query: { enabled: Number(amount) > 0 },
   });
 
@@ -425,7 +450,7 @@ function WithdrawPanel({ onSuccess, address, stDotBal }: {
           : undefined} />
       <TxButton
         onClick={() => writeContract({ address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI,
-          functionName: "requestWithdraw", args: [parseEther(amount || "0")] })}
+          functionName: "requestWithdraw", args: [parseAmt(amount)] })}
         disabled={!amount || Number(amount) <= 0} isPending={isPending || isConfirming}
         isSuccess={isSuccess}
         gradientClass="bg-gradient-to-r from-amber-600 to-amber-500 text-white shadow-amber-500/25 hover:shadow-amber-500/40"
@@ -482,7 +507,7 @@ function CrossChainPanel({ onSuccess, stDotBal }: { onSuccess: () => void; stDot
 
   const { data: dotOut } = useReadContract({
     address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI, functionName: "dotForShares",
-    args: Number(amount) > 0 ? [parseEther(amount)] : undefined,
+    args: Number(amount) > 0 ? [parseAmt(amount)] : undefined,
     query: { enabled: Number(amount) > 0 },
   });
 
@@ -496,7 +521,7 @@ function CrossChainPanel({ onSuccess, stDotBal }: { onSuccess: () => void; stDot
   // Live SCALE-encoded XCM bytes preview — this is unique to PolkaVault
   const { data: xcmBytes } = useReadContract({
     address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI, functionName: "previewXcmMessage",
-    args: Number(amount) > 0 && destBytes32 ? [parseEther(amount), destBytes32] : undefined,
+    args: Number(amount) > 0 && destBytes32 ? [parseAmt(amount), destBytes32] : undefined,
     query: { enabled: Number(amount) > 0 && !!destBytes32 && showPreview },
   });
 
@@ -527,7 +552,7 @@ function CrossChainPanel({ onSuccess, stDotBal }: { onSuccess: () => void; stDot
       <TxButton
         onClick={() => writeContract({ address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI,
           functionName: "sendCrossChain",
-          args: [parseEther(amount || "0"), toBytes32(dest)], value: fee })}
+          args: [parseAmt(amount), toBytes32(dest)], value: fee })}
         disabled={!amount || Number(amount) <= 0 || !dest}
         isPending={isPending || isConfirming} isSuccess={isSuccess}
         gradientClass="bg-gradient-to-r from-blue-600 to-indigo-500 text-white shadow-blue-500/25 hover:shadow-blue-500/40"
@@ -605,36 +630,81 @@ function CompoundPanel({ onSuccess }: { onSuccess: () => void }) {
     address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI, functionName: "exchangeRate",
     query: { refetchInterval: 5_000 },
   });
+  const { data: keeperFeeBps } = useReadContract({
+    address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI, functionName: "keeperFeeBps",
+  });
+  const { data: apyBps } = useReadContract({
+    address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI, functionName: "lastApyBps",
+    query: { refetchInterval: 30_000 },
+  });
+  const { data: lastCompoundTime } = useReadContract({
+    address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI, functionName: "lastCompoundTime",
+    query: { refetchInterval: 30_000 },
+  });
   if (isSuccess) { onSuccess(); reset(); }
+
+  const feeBps = keeperFeeBps as bigint | undefined;
+  const realApy = fmtApy(apyBps as bigint | undefined);
+  const keeperEarn = feeBps && feeBps > 0n && amount && Number(amount) > 0
+    ? (Number(amount) * Number(feeBps) / 10_000).toFixed(6)
+    : null;
+  const lastCompound = lastCompoundTime && (lastCompoundTime as bigint) > 0n
+    ? new Date(Number(lastCompoundTime as bigint) * 1000).toLocaleString()
+    : null;
 
   return (
     <Panel accentClass="bg-gradient-to-r from-yellow-500 to-orange-400">
       <PanelHeader icon={Zap} iconClass="bg-yellow-500/15 text-yellow-400"
         title="Compound Staking Rewards"
-        sub="Permissionless · bondExtra() · Exchange rate grows for every stDOT holder" />
-      <div className="rounded-xl bg-[#0e0c06] border border-yellow-500/15 p-4 flex items-center justify-between">
-        <div>
-          <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">Current Exchange Rate</p>
-          <p className="font-black text-3xl font-mono text-yellow-400 leading-none">
+        sub="Permissionless · Earn keeper fee · Exchange rate grows for every stDOT holder" />
+
+      {/* Stats row */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-xl bg-[#0e0c06] border border-yellow-500/15 p-3">
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Exchange Rate</p>
+          <p className="font-black text-xl font-mono text-yellow-400 leading-none">
             {rate !== undefined ? fmtRate(rate as bigint) : "—"}
           </p>
-          <p className="text-[11px] text-gray-500 mt-1.5">PAS per stDOT · grows after each compound()</p>
+          <p className="text-[10px] text-gray-600 mt-1">PAS / stDOT</p>
         </div>
-        <div className="flex items-end gap-0.5 h-10">
-          {[20, 35, 30, 50, 45, 65, 60, 80].map((h, i) => (
-            <div key={i} className="w-1.5 rounded-sm bg-gradient-to-t from-yellow-600/60 to-yellow-400/30"
-              style={{ height: `${h}%` }} />
-          ))}
+        <div className="rounded-xl bg-[#0e0c06] border border-emerald-500/15 p-3">
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Realized APY</p>
+          <p className="font-black text-xl font-mono text-emerald-400 leading-none">
+            {realApy ?? "—"}
+          </p>
+          <p className="text-[10px] text-gray-600 mt-1">
+            {lastCompound ? `last: ${lastCompound}` : "awaiting compound"}
+          </p>
         </div>
       </div>
+
+      {/* Keeper fee callout */}
+      {feeBps !== undefined && feeBps > 0n && (
+        <div className="rounded-xl bg-emerald-950/30 border border-emerald-500/20 px-3 py-2.5 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-black text-emerald-400">
+              Earn {Number(feeBps) / 100}% keeper reward
+            </p>
+            <p className="text-[10px] text-gray-600 mt-0.5">
+              Paid instantly to your wallet when you call compound()
+            </p>
+          </div>
+          {keeperEarn && (
+            <p className="text-xs font-black text-emerald-300 shrink-0 ml-2">
+              +{keeperEarn} PAS
+            </p>
+          )}
+        </div>
+      )}
+
       <TokenInput value={amount} onChange={setAmount} token="PAS" />
       <TxButton
         onClick={() => writeContract({ address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI,
-          functionName: "compound", value: parseEther(amount || "0") })}
+          functionName: "compound", value: parseAmt(amount) })}
         disabled={!amount || Number(amount) <= 0} isPending={isPending || isConfirming}
         isSuccess={isSuccess}
         gradientClass="bg-gradient-to-r from-yellow-500 to-orange-400 text-black shadow-yellow-500/25 hover:shadow-yellow-500/40"
-        label="Compound Rewards" />
+        label={keeperEarn ? `Compound & Earn ${keeperEarn} PAS` : "Compound Rewards"} />
     </Panel>
   );
 }
@@ -988,9 +1058,9 @@ export default function Home() {
         <footer className="border-t border-white/[0.05] py-8 text-center">
           <p className="text-xs text-gray-700">
             PolkaVault · Native Liquid Staking on Polkadot Hub ·{" "}
-            <a href="https://blockscout-testnet.polkadot.io/address/0x19faeccEe3eefE31736956EF2bc9B7436beC5BD2"
+            <a href="https://blockscout-testnet.polkadot.io/address/0xbcd7bFCd5224a18aB306923E145aa7e8ba4f5e04"
               target="_blank" rel="noopener noreferrer" className="hover:text-gray-500 transition-colors">
-              0x19fae…BD2
+              0xbcd7…5e04
             </a>
           </p>
           <p className="text-[11px] text-gray-800 mt-1">Chain ID 420420417 · Polkadot Hub Testnet</p>
