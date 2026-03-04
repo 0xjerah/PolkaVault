@@ -611,7 +611,7 @@ function HowItWorks() {
     {
       n: "02", color: "emerald",
       title: "Earn Yield",
-      desc: "Staking rewards accumulate each era. compound() re-bonds them — the stDOT/DOT exchange rate increases for all holders.",
+      desc: "Staking rewards accumulate each era. compound() re-bonds them — the stDOT/PAS exchange rate increases for all holders.",
     },
     {
       n: "03", color: "blue",
