@@ -10,7 +10,15 @@ contract DeployPolkaVault is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         PolkaVault vault = new PolkaVault();
+
         console.log("PolkaVault deployed at:", address(vault));
+        console.log("Owner:", vault.owner());
+        console.log("stDOT name:", vault.name());
+        console.log("stDOT symbol:", vault.symbol());
+
+        // Set unbonding period to 1 hour for testnet demo
+        vault.setUnbondingPeriod(1 hours);
+        console.log("Unbonding period set to 1 hour for testnet");
 
         vm.stopBroadcast();
     }
