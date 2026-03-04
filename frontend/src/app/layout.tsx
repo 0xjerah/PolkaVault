@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PolkaVault - Native Asset Portfolio Manager",
+  title: "PolkaVault — Liquid Staking on Polkadot Hub",
   description:
-    "Manage your Polkadot Hub portfolio: track native assets, stake DOT, and transfer cross-chain — all through Hub precompiles.",
+    "Deposit DOT, receive stDOT liquid staking tokens. Stake, earn, and send cross-chain via XCM — all powered by Polkadot Hub precompiles.",
 };
 
 export default function RootLayout({

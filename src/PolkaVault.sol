@@ -158,6 +158,35 @@ contract PolkaVault {
     }
 
     // ============================================================
+    //                    STAKING PRECOMPILE HELPERS
+    // ============================================================
+
+    /// @dev Low-level wrappers that bypass Solidity 0.8's EXTCODESIZE check.
+    ///      Polkadot Hub precompiles have 0 EVM code bytes but respond to calls.
+
+    function _stakingBond(uint256 value, uint8 payee) internal {
+        (bool ok,) = STAKING.call(abi.encodeWithSignature("bond(uint256,uint8)", value, payee));
+        require(ok, "staking: bond failed");
+    }
+
+    function _stakingBondExtra(uint256 value) internal {
+        (bool ok,) = STAKING.call(abi.encodeWithSignature("bondExtra(uint256)", value));
+        require(ok, "staking: bondExtra failed");
+    }
+
+    function _stakingUnbond(uint256 value) internal {
+        (bool ok,) = STAKING.call(abi.encodeWithSignature("unbond(uint256)", value));
+        require(ok, "staking: unbond failed");
+    }
+
+    function _stakingWithdrawUnbonded(uint32 numSlashingSpans) internal {
+        (bool ok,) = STAKING.call(
+            abi.encodeWithSignature("withdrawUnbonded(uint32)", numSlashingSpans)
+        );
+        require(ok, "staking: withdrawUnbonded failed");
+    }
+
+    // ============================================================
     //                    CORE: DEPOSIT
     // ============================================================
 
@@ -170,10 +199,10 @@ contract PolkaVault {
         uint256 shares = sharesForDot(msg.value);
 
         if (!_bonded) {
-            IStaking(STAKING).bond(msg.value, 0); // payee=0 → Staked (rewards stay bonded)
+            _stakingBond(msg.value, 0); // payee=0 → Staked (rewards stay bonded)
             _bonded = true;
         } else {
-            IStaking(STAKING).bondExtra(msg.value);
+            _stakingBondExtra(msg.value);
         }
 
         totalStaked += msg.value;
@@ -198,7 +227,7 @@ contract PolkaVault {
         totalStaked    -= dot;
         totalUnbonding += dot;
 
-        IStaking(STAKING).unbond(dot);
+        _stakingUnbond(dot);
 
         uint256 claimableAt = block.timestamp + unbondingPeriod;
         withdrawRequests[msg.sender].push(
@@ -221,7 +250,7 @@ contract PolkaVault {
         req.claimed     = true;
         totalUnbonding -= req.dot;
 
-        IStaking(STAKING).withdrawUnbonded(0);
+        _stakingWithdrawUnbonded(0);
 
         (bool ok,) = msg.sender.call{value: req.dot}("");
         if (!ok) revert NativeTransferFailed();
@@ -242,7 +271,7 @@ contract PolkaVault {
     function compound() external payable {
         if (msg.value == 0) revert ZeroAmount();
 
-        IStaking(STAKING).bondExtra(msg.value);
+        _stakingBondExtra(msg.value);
         totalStaked += msg.value;
 
         emit Compounded(msg.value, exchangeRate(), totalStaked);
@@ -269,7 +298,7 @@ contract PolkaVault {
         _burn(msg.sender, shares);
         totalStaked -= dot;
 
-        IStaking(STAKING).unbond(dot);
+        _stakingUnbond(dot);
 
         bytes memory xcmMsg = _buildTeleportMessage(uint128(dot), destAccount);
         XCM.execute(xcmMsg, IXCM.Weight(executeRefTime, executeProofSize));
