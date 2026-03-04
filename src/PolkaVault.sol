@@ -379,6 +379,17 @@ contract PolkaVault {
         dotValue     = dotForShares(stDotBalance);
     }
 
+    /// @notice Preview the XCM message that would be sent for a cross-chain transfer
+    /// @dev Allows users and judges to inspect the exact SCALE-encoded bytes before sending
+    function previewXcmMessage(uint256 shares, bytes32 destAccount)
+        external
+        view
+        returns (bytes memory)
+    {
+        uint256 dot = dotForShares(shares);
+        return _buildTeleportMessage(uint128(dot), destAccount);
+    }
+
     /// @notice Precompile address for a given native asset ID
     function assetAddress(uint256 assetId) external pure returns (address) {
         return address(uint160(uint160(ASSETS_BASE) + assetId));
