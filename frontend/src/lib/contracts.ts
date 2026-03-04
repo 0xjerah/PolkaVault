@@ -1,5 +1,5 @@
 // Deployed to Polkadot Hub Testnet (chain 420420417)
-export const POLKAVAULT_ADDRESS = "0x3e9eF811ddF3078559178C57d6cD97f45DbD6220" as const;
+export const POLKAVAULT_ADDRESS = "0x19faeccEe3eefE31736956EF2bc9B7436beC5BD2" as const;
 
 export const POLKAVAULT_ABI = [
   // ── Write ────────────────────────────────────────────────────
@@ -43,6 +43,39 @@ export const POLKAVAULT_ABI = [
   },
 
   // ── Read ──────────────────────────────────────────────────────
+  {
+    type: "function",
+    name: "uniqueDepositors",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "owner",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getNominators",
+    inputs: [],
+    outputs: [{ name: "", type: "bytes32[]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "nominateValidators",
+    inputs: [{ name: "targets", type: "bytes32[]" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "event",
+    name: "ValidatorsNominated",
+    inputs: [{ name: "targets", type: "bytes32[]", indexed: false }],
+  },
   {
     type: "function",
     name: "getVaultStats",

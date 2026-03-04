@@ -353,4 +353,166 @@ contract PolkaVaultTest is Test {
         assertEq(vault.STAKING(),   address(0x0804));
         assertEq(address(vault.XCM()), 0x00000000000000000000000000000000000a0000);
     }
+
+    // ============================================================
+    //                    VALIDATOR NOMINATION
+    // ============================================================
+
+    function test_nominateValidators_stores_targets() public {
+        // Need to bond first (vault must be in bonded state for nominate to make sense)
+        vm.prank(alice);
+        vault.deposit{value: 100 * ONE_DOT}();
+
+        bytes32[] memory targets = new bytes32[](2);
+        targets[0] = bytes32(uint256(0xAAAA));
+        targets[1] = bytes32(uint256(0xBBBB));
+
+        vault.nominateValidators(targets);
+
+        bytes32[] memory stored = vault.getNominators();
+        assertEq(stored.length, 2);
+        assertEq(stored[0], targets[0]);
+        assertEq(stored[1], targets[1]);
+    }
+
+    function test_nominateValidators_reverts_non_owner() public {
+        bytes32[] memory targets = new bytes32[](1);
+        targets[0] = bytes32(uint256(0xAAAA));
+
+        vm.prank(alice);
+        vm.expectRevert(PolkaVault.Unauthorized.selector);
+        vault.nominateValidators(targets);
+    }
+
+    function test_nominateValidators_reverts_empty() public {
+        bytes32[] memory targets = new bytes32[](0);
+        vm.expectRevert();
+        vault.nominateValidators(targets);
+    }
+
+    function test_nominateValidators_replaces_previous() public {
+        vm.prank(alice);
+        vault.deposit{value: 100 * ONE_DOT}();
+
+        bytes32[] memory first = new bytes32[](1);
+        first[0] = bytes32(uint256(0xAAAA));
+        vault.nominateValidators(first);
+
+        bytes32[] memory second = new bytes32[](2);
+        second[0] = bytes32(uint256(0xCCCC));
+        second[1] = bytes32(uint256(0xDDDD));
+        vault.nominateValidators(second);
+
+        bytes32[] memory stored = vault.getNominators();
+        assertEq(stored.length, 2);
+        assertEq(stored[0], second[0]);
+    }
+
+    // ============================================================
+    //                    UNIQUE DEPOSITORS
+    // ============================================================
+
+    function test_uniqueDepositors_increments_on_first_deposit() public {
+        assertEq(vault.uniqueDepositors(), 0);
+
+        vm.prank(alice);
+        vault.deposit{value: 10 * ONE_DOT}();
+        assertEq(vault.uniqueDepositors(), 1);
+
+        vm.prank(bob);
+        vault.deposit{value: 10 * ONE_DOT}();
+        assertEq(vault.uniqueDepositors(), 2);
+    }
+
+    function test_uniqueDepositors_no_double_count() public {
+        vm.prank(alice);
+        vault.deposit{value: 10 * ONE_DOT}();
+        vm.prank(alice);
+        vault.deposit{value: 10 * ONE_DOT}();
+
+        assertEq(vault.uniqueDepositors(), 1);
+    }
+
+    // ============================================================
+    //                    KEEPER FEE
+    // ============================================================
+
+    function test_keeper_fee_paid_on_compound() public {
+        vm.prank(alice);
+        vault.deposit{value: 100 * ONE_DOT}();
+
+        vault.setKeeperFee(100); // 1%
+
+        address keeper = makeAddr("keeper");
+        vm.deal(keeper, 10 * ONE_DOT + 0.1 ether); // gas + compound value
+
+        uint256 balBefore = keeper.balance;
+        vm.prank(keeper);
+        vault.compound{value: 10 * ONE_DOT}();
+
+        // 1% of 10 DOT = 0.1 DOT paid to keeper
+        assertEq(keeper.balance - (balBefore - 10 * ONE_DOT), 0.1 ether);
+        // Only 9.9 DOT bonded
+        assertEq(vault.totalStaked(), 109.9 ether);
+    }
+
+    function test_no_keeper_fee_when_zero() public {
+        vm.prank(alice);
+        vault.deposit{value: 100 * ONE_DOT}();
+
+        // keeperFeeBps defaults to 0 — all value bonded
+        vault.compound{value: 5 * ONE_DOT}();
+        assertEq(vault.totalStaked(), 105 * ONE_DOT);
+    }
+
+    function test_setKeeperFee_reverts_non_owner() public {
+        vm.prank(alice);
+        vm.expectRevert(PolkaVault.Unauthorized.selector);
+        vault.setKeeperFee(100);
+    }
+
+    function test_setKeeperFee_reverts_above_max() public {
+        vm.expectRevert();
+        vault.setKeeperFee(501);
+    }
+
+    // ============================================================
+    //                    REALIZED APY
+    // ============================================================
+
+    function test_lastApyBps_zero_before_first_compound() public {
+        assertEq(vault.lastApyBps(), 0);
+        vm.prank(alice);
+        vault.deposit{value: 100 * ONE_DOT}();
+        // First compound sets baseline but can't compute APY yet
+        vault.compound{value: 10 * ONE_DOT}();
+        assertEq(vault.lastApyBps(), 0);
+    }
+
+    function test_lastApyBps_computed_on_second_compound() public {
+        vm.prank(alice);
+        vault.deposit{value: 100 * ONE_DOT}();
+
+        // First compound at T=0 — sets baseline: rate = 1.1e18
+        vault.compound{value: 10 * ONE_DOT}();
+
+        // Advance exactly 365 days
+        vm.warp(block.timestamp + 365 days);
+
+        // Second compound: 10% of totalStaked (110) = 11 DOT → rate goes to 1.21e18
+        // Growth = (1.21 - 1.1) / 1.1 = 0.1 = 10% in 365 days → APY = 1000 bps
+        vault.compound{value: 11 * ONE_DOT}();
+
+        assertEq(vault.lastApyBps(), 1000); // exactly 10% APY
+    }
+
+    function test_lastCompoundTime_updated() public {
+        vm.prank(alice);
+        vault.deposit{value: 100 * ONE_DOT}();
+
+        uint256 t = block.timestamp;
+        vault.compound{value: 5 * ONE_DOT}();
+
+        assertEq(vault.lastCompoundTime(), t);
+    }
 }

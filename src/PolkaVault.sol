@@ -66,6 +66,18 @@ contract PolkaVault {
     /// @notice Unbonding period — set to 28 days for mainnet, lower for testnet demo
     uint256 public unbondingPeriod = 28 days;
 
+    /// @notice Keeper incentive in basis points sent to whoever calls compound() (0 = disabled)
+    uint256 public keeperFeeBps;
+
+    /// @notice Annualized yield in basis points computed from the most recent compound event
+    uint256 public lastApyBps;
+
+    /// @notice Timestamp of the most recent compound() call
+    uint256 public lastCompoundTime;
+
+    /// @notice Exchange rate recorded after the most recent compound() (baseline for next APY calc)
+    uint256 public lastCompoundRate;
+
     address public owner;
 
     uint256 private constant PRECISION = 1e18;
@@ -113,6 +125,8 @@ contract PolkaVault {
     );
     event WithdrawClaimed(address indexed user, uint256 dot);
     event Compounded(uint256 rewards, uint256 newRate, uint256 newTotalStaked);
+    event KeeperRewarded(address indexed keeper, uint256 fee, uint256 compounded);
+    event KeeperFeeUpdated(uint256 feeBps);
     event SentCrossChain(address indexed user, uint256 dot, bytes32 dest);
     event UnbondingPeriodUpdated(uint256 period);
     event XcmFeeUpdated(uint128 fee);
@@ -286,15 +300,38 @@ contract PolkaVault {
     /// @dev Caller provides reward amount as msg.value. Vault bonds it via bondExtra()
     ///      which increases totalStaked without minting new stDOT → rate goes up.
     ///
-    ///      Permissionless: anyone can trigger. In production this is called by a
-    ///      keeper bot after each era's rewards are paid out to the vault's stash.
+    ///      Permissionless: anyone can call. Keeper earns keeperFeeBps of compounded rewards.
+    ///      On-chain APY is computed from exchange rate growth between consecutive calls.
     function compound() external payable {
         if (msg.value == 0) revert ZeroAmount();
 
-        _stakingBondExtra(msg.value);
-        totalStaked += msg.value;
+        // Split: keeper incentive + rewards to bond
+        uint256 fee     = (msg.value * keeperFeeBps) / 10_000;
+        uint256 rewards = msg.value - fee;
 
-        emit Compounded(msg.value, exchangeRate(), totalStaked);
+        _stakingBondExtra(rewards);
+        totalStaked += rewards;
+
+        // Compute realized APY from rate growth since last compound
+        uint256 newRate = exchangeRate();
+        if (lastCompoundTime > 0 && lastCompoundRate > 0 && newRate > lastCompoundRate) {
+            uint256 elapsed = block.timestamp - lastCompoundTime;
+            if (elapsed > 0) {
+                uint256 growth = ((newRate - lastCompoundRate) * PRECISION) / lastCompoundRate;
+                lastApyBps = (growth * 365 days * 10_000) / (elapsed * PRECISION);
+            }
+        }
+        lastCompoundRate = newRate;
+        lastCompoundTime = block.timestamp;
+
+        // Pay keeper reward
+        if (fee > 0) {
+            (bool ok,) = msg.sender.call{value: fee}("");
+            if (!ok) revert NativeTransferFailed();
+            emit KeeperRewarded(msg.sender, fee, rewards);
+        }
+
+        emit Compounded(rewards, newRate, totalStaked);
     }
 
     // ============================================================
@@ -465,6 +502,13 @@ contract PolkaVault {
     /// @notice Returns the current nominated validator set
     function getNominators() external view returns (bytes32[] memory) {
         return _nominators;
+    }
+
+    /// @notice Set keeper fee in basis points paid to whoever calls compound() (max 500 = 5%)
+    function setKeeperFee(uint256 bps) external onlyOwner {
+        require(bps <= 500, "fee exceeds max");
+        keeperFeeBps = bps;
+        emit KeeperFeeUpdated(bps);
     }
 
     /// @notice Set unbonding period (use low value on testnet for demo)
