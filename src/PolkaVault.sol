@@ -51,6 +51,15 @@ contract PolkaVault {
     /// @notice Total DOT currently in unbonding queue
     uint256 public totalUnbonding;
 
+    /// @notice Number of unique addresses that have ever deposited
+    uint256 public uniqueDepositors;
+
+    /// @notice Tracks whether an address has deposited before (for uniqueDepositors count)
+    mapping(address => bool) private _hasDeposited;
+
+    /// @notice Current nominated validator set (set by owner via nominateValidators)
+    bytes32[] private _nominators;
+
     /// @notice Whether the vault has made its initial bond call
     bool private _bonded;
 
@@ -107,6 +116,7 @@ contract PolkaVault {
     event SentCrossChain(address indexed user, uint256 dot, bytes32 dest);
     event UnbondingPeriodUpdated(uint256 period);
     event XcmFeeUpdated(uint128 fee);
+    event ValidatorsNominated(bytes32[] targets);
 
     // ============================================================
     //                    ERRORS
@@ -179,6 +189,11 @@ contract PolkaVault {
         require(ok, "staking: unbond failed");
     }
 
+    function _stakingNominate(bytes32[] calldata targets) internal {
+        (bool ok,) = STAKING.call(abi.encodeWithSignature("nominate(bytes32[])", targets));
+        require(ok, "staking: nominate failed");
+    }
+
     function _stakingWithdrawUnbonded(uint32 numSlashingSpans) internal {
         (bool ok,) = STAKING.call(
             abi.encodeWithSignature("withdrawUnbonded(uint32)", numSlashingSpans)
@@ -203,6 +218,11 @@ contract PolkaVault {
             _bonded = true;
         } else {
             _stakingBondExtra(msg.value);
+        }
+
+        if (!_hasDeposited[msg.sender]) {
+            _hasDeposited[msg.sender] = true;
+            uniqueDepositors++;
         }
 
         totalStaked += msg.value;
@@ -427,6 +447,25 @@ contract PolkaVault {
     // ============================================================
     //                    ADMIN
     // ============================================================
+
+    /// @notice Nominate a set of validators for the vault's bonded stake
+    /// @dev Must be called after the first deposit (once _bonded = true).
+    ///      Without nomination, bonded PAS earns zero staking rewards on mainnet.
+    ///      Validator account IDs are 32-byte SS58 public keys.
+    function nominateValidators(bytes32[] calldata targets) external onlyOwner {
+        require(targets.length > 0, "no targets");
+        _stakingNominate(targets);
+        delete _nominators;
+        for (uint256 i = 0; i < targets.length; i++) {
+            _nominators.push(targets[i]);
+        }
+        emit ValidatorsNominated(targets);
+    }
+
+    /// @notice Returns the current nominated validator set
+    function getNominators() external view returns (bytes32[] memory) {
+        return _nominators;
+    }
 
     /// @notice Set unbonding period (use low value on testnet for demo)
     function setUnbondingPeriod(uint256 period) external onlyOwner {

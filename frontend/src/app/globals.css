@@ -34,10 +34,10 @@ body {
 .animation-delay-2000    { animation-delay: 2s; }
 .animation-delay-4000    { animation-delay: 4s; }
 
-/* Shimmer for loading skeletons */
-@keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position:  400px 0; }
+/* Polkadot dot-grid background */
+.dot-grid {
+  background-image: radial-gradient(rgba(230, 0, 122, 0.14) 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
 }
 
 /* Remove number input arrows */
