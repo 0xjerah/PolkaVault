@@ -3,7 +3,7 @@
 set -e
 
 echo "Building YieldOptimizer for PolkaVM (RISC-V)..."
-cargo +nightly build --release
+cargo +nightly-2024-11-19 build --release
 
 echo "Linking with polkatool..."
 polkatool link --strip \
