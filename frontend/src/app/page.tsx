@@ -9,7 +9,7 @@ import {
   useBalance,
 } from "wagmi";
 import { parseEther, formatEther } from "viem";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
 import {
   TrendingUp,
@@ -31,6 +31,13 @@ import {
   Vote,
   Plus,
   Trash2,
+  ExternalLink,
+  Github,
+  BookOpen,
+  ArrowDown,
+  Globe,
+  Sparkles,
+  Box,
 } from "lucide-react";
 import { POLKAVAULT_ADDRESS, POLKAVAULT_ABI } from "@/lib/contracts";
 
@@ -42,7 +49,6 @@ function fmt(wei: bigint, dp = 4): string {
   return `${int}.${dec.padEnd(dp, "0").slice(0, dp)}`;
 }
 function fmtRate(r: bigint) { return (Number(r) / 1e18).toFixed(6); }
-// Safely parse a user-typed amount to bigint — handles scientific notation (e.g. "2e3")
 function parseAmt(val: string): bigint {
   if (!val) return 0n;
   const n = Number(val);
@@ -92,18 +98,46 @@ function Sparkline({ data }: { data: number[] }) {
   const min = Math.min(...data);
   const max = Math.max(...data);
   const span = max - min || 0.000001;
-  const W = 56, H = 24;
+  const W = 80, H = 32;
   const pts = data
     .map((v, i) => `${(i / (data.length - 1)) * W},${H - ((v - min) / span) * (H - 4) - 2}`)
     .join(" ");
   return (
-    <svg width={W} height={H} className="ml-1 opacity-90">
-      <polyline points={pts} fill="none" stroke="#f472b6" strokeWidth="1.5"
+    <svg width={W} height={H} className="ml-2 opacity-90">
+      <defs>
+        <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#ec4899" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#ec4899" stopOpacity="1" />
+        </linearGradient>
+      </defs>
+      <polyline points={pts} fill="none" stroke="url(#sparkGrad)" strokeWidth="2"
         strokeLinecap="round" strokeLinejoin="round" />
       <circle cx={(W)} cy={H - ((data[data.length - 1] - min) / span) * (H - 4) - 2}
-        r="2" fill="#f472b6" />
+        r="3" fill="#ec4899" />
     </svg>
   );
+}
+
+// ─── Scroll-aware section hook ────────────────────────────────────────────────
+
+function useActiveSection() {
+  const [active, setActive] = useState("");
+  useEffect(() => {
+    const sections = document.querySelectorAll("section[id]");
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActive(entry.target.id);
+          }
+        }
+      },
+      { rootMargin: "-40% 0px -40% 0px", threshold: 0 }
+    );
+    sections.forEach((s) => observer.observe(s));
+    return () => observer.disconnect();
+  }, []);
+  return active;
 }
 
 // ─── Background ───────────────────────────────────────────────────────────────
@@ -111,13 +145,11 @@ function Sparkline({ data }: { data: number[] }) {
 function Background() {
   return (
     <>
-      {/* Polkadot dot grid */}
-      <div className="dot-grid fixed inset-0 -z-20 opacity-40 pointer-events-none" />
-      {/* Gradient orbs */}
+      <div className="dot-grid fixed inset-0 -z-20 opacity-30 pointer-events-none" />
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute -top-64 -left-64 w-[700px] h-[700px] rounded-full bg-pink-600/[0.12] blur-[140px] animate-blob" />
-        <div className="absolute -top-32 -right-64 w-[600px] h-[600px] rounded-full bg-purple-600/[0.10] blur-[120px] animate-blob animation-delay-2000" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-indigo-600/[0.08] blur-[120px] animate-blob animation-delay-4000" />
+        <div className="absolute -top-64 -left-64 w-[800px] h-[800px] rounded-full bg-pink-600/[0.10] blur-[160px] animate-blob" />
+        <div className="absolute -top-32 -right-64 w-[700px] h-[700px] rounded-full bg-purple-600/[0.08] blur-[140px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-indigo-600/[0.06] blur-[140px] animate-blob animation-delay-4000" />
       </div>
     </>
   );
@@ -125,19 +157,60 @@ function Background() {
 
 // ─── Nav ──────────────────────────────────────────────────────────────────────
 
+const NAV_LINKS = [
+  { id: "hero", label: "Home" },
+  { id: "dashboard", label: "App" },
+  { id: "how-it-works", label: "How It Works" },
+  { id: "cross-vm", label: "Cross-VM" },
+  { id: "precompiles", label: "Precompiles" },
+];
+
 function Nav() {
+  const activeSection = useActiveSection();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <nav className="sticky top-0 z-50 border-b border-pink-500/10 bg-[#030712]/85 backdrop-blur-xl">
-      <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+    <nav className={clsx(
+      "sticky top-0 z-50 transition-all duration-300",
+      scrolled
+        ? "border-b border-pink-500/10 bg-[#030712]/90 backdrop-blur-xl shadow-lg shadow-black/20"
+        : "bg-transparent"
+    )}>
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-pink-800 flex items-center justify-center shadow-lg shadow-pink-500/40">
-            <Shield className="w-4 h-4 text-white" />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-500 to-pink-800 flex items-center justify-center shadow-lg shadow-pink-500/30 animate-pulse-glow">
+            <Shield className="w-4.5 h-4.5 text-white" />
           </div>
           <span className="font-black tracking-tight text-lg">PolkaVault</span>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20 font-bold">
             Testnet
           </span>
         </div>
+
+        {/* Desktop nav links */}
+        <div className="hidden md:flex items-center gap-1">
+          {NAV_LINKS.map((link) => (
+            <a
+              key={link.id}
+              href={`#${link.id}`}
+              className={clsx(
+                "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200",
+                activeSection === link.id
+                  ? "bg-pink-500/15 text-pink-400"
+                  : "text-gray-500 hover:text-gray-300 hover:bg-white/[0.04]"
+              )}
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+
         <ConnectButton showBalance chainStatus="icon" accountStatus="avatar" />
       </div>
     </nav>
@@ -146,10 +219,26 @@ function Nav() {
 
 // ─── Feature badge ─────────────────────────────────────────────────────────────
 
-function Chip({ children }: { children: React.ReactNode }) {
+function Chip({ children, color = "pink" }: { children: React.ReactNode; color?: "pink" | "emerald" | "blue" | "purple" | "fuchsia" }) {
+  const colors = {
+    pink: "border-pink-500/20 text-pink-400 bg-pink-500/5",
+    emerald: "border-emerald-500/20 text-emerald-400 bg-emerald-500/5",
+    blue: "border-blue-500/20 text-blue-400 bg-blue-500/5",
+    purple: "border-purple-500/20 text-purple-400 bg-purple-500/5",
+    fuchsia: "border-fuchsia-500/20 text-fuchsia-400 bg-fuchsia-500/5",
+  };
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#12121e] border border-white/[0.08] text-xs text-gray-400 font-medium select-none">
-      <span className="w-1 h-1 rounded-full bg-pink-500 shrink-0" />
+    <span className={clsx(
+      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium select-none transition-colors hover:bg-white/[0.04]",
+      colors[color]
+    )}>
+      <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", {
+        "bg-pink-500": color === "pink",
+        "bg-emerald-500": color === "emerald",
+        "bg-blue-500": color === "blue",
+        "bg-purple-500": color === "purple",
+        "bg-fuchsia-500": color === "fuchsia",
+      })} />
       {children}
     </span>
   );
@@ -177,52 +266,68 @@ function VaultStats() {
     query: { refetchInterval: 30_000 },
   });
 
-  const [rate, staked] = (stats as [bigint, bigint, bigint, bigint]) ?? [0n, 0n, 0n, 0n];
+  const [rate, staked, , supply] = (stats as [bigint, bigint, bigint, bigint]) ?? [0n, 0n, 0n, 0n];
   const rateHistory = useRateHistory(rate);
   const realApy = fmtApy(apyBps as bigint | undefined);
 
+  const statItems = [
+    {
+      icon: TrendingUp,
+      label: "Exchange Rate",
+      value: fmtRate(rate),
+      sub: "PAS / stDOT",
+      color: "pink" as const,
+      extra: <Sparkline data={rateHistory} />,
+    },
+    {
+      icon: Lock,
+      label: "Total Value Locked",
+      value: fmt(staked),
+      sub: "PAS bonded",
+      color: "emerald" as const,
+    },
+    {
+      icon: Layers,
+      label: "Depositors",
+      value: depositors !== undefined ? depositors.toString() : "—",
+      sub: "unique wallets",
+      color: "purple" as const,
+    },
+    {
+      icon: Zap,
+      label: "Realized APY",
+      value: realApy ?? "~12–15%",
+      sub: realApy ? "on-chain" : "estimated",
+      color: "yellow" as const,
+    },
+  ];
+
+  const colorMap = {
+    pink: { icon: "text-pink-400", value: "text-pink-300", border: "border-pink-500/15 hover:border-pink-500/30" },
+    emerald: { icon: "text-emerald-400", value: "text-emerald-300", border: "border-emerald-500/15 hover:border-emerald-500/30" },
+    purple: { icon: "text-purple-400", value: "text-purple-300", border: "border-purple-500/15 hover:border-purple-500/30" },
+    yellow: { icon: "text-yellow-400", value: "text-yellow-300", border: "border-yellow-500/15 hover:border-yellow-500/30" },
+  };
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-10 max-w-3xl mx-auto w-full">
-      {/* Exchange Rate — with sparkline */}
-      <div className="rounded-2xl bg-[#0d0d18] border border-white/[0.08] p-4 text-center shadow-lg hover:border-pink-500/20 transition-all">
-        <TrendingUp className="w-4 h-4 mx-auto mb-2 text-pink-400" />
-        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Exchange Rate</p>
-        <div className="flex items-center justify-center">
-          <p className="font-black text-base leading-none text-pink-300">{fmtRate(rate)}</p>
-          <Sparkline data={rateHistory} />
-        </div>
-        <p className="text-[10px] text-gray-600 mt-1">PAS / stDOT</p>
-      </div>
-
-      {/* Total Staked */}
-      <div className="rounded-2xl bg-[#0d0d18] border border-white/[0.08] p-4 text-center shadow-lg hover:border-emerald-500/20 transition-all">
-        <Lock className="w-4 h-4 mx-auto mb-2 text-emerald-400" />
-        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Total Staked</p>
-        <p className="font-black text-base leading-none text-emerald-300">{fmt(staked)}</p>
-        <p className="text-[10px] text-gray-600 mt-1">PAS bonded</p>
-      </div>
-
-      {/* Depositors */}
-      <div className="rounded-2xl bg-[#0d0d18] border border-white/[0.08] p-4 text-center shadow-lg hover:border-purple-500/20 transition-all">
-        <Layers className="w-4 h-4 mx-auto mb-2 text-purple-400" />
-        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Depositors</p>
-        <p className="font-black text-base leading-none text-purple-300">
-          {depositors !== undefined ? depositors.toString() : "—"}
-        </p>
-        <p className="text-[10px] text-gray-600 mt-1">unique wallets</p>
-      </div>
-
-      {/* Realized APY */}
-      <div className="rounded-2xl bg-[#0d0d18] border border-white/[0.08] p-4 text-center shadow-lg hover:border-yellow-500/20 transition-all">
-        <Zap className="w-4 h-4 mx-auto mb-2 text-yellow-400" />
-        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Realized APY</p>
-        <p className="font-black text-base leading-none text-yellow-300">
-          {realApy ?? "~12–15%"}
-        </p>
-        <p className="text-[10px] text-gray-600 mt-1">
-          {realApy ? "on-chain · last compound" : "est. · awaiting compound"}
-        </p>
-      </div>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-12 w-full">
+      {statItems.map((item) => {
+        const c = colorMap[item.color];
+        return (
+          <div key={item.label} className={clsx(
+            "rounded-2xl glass border p-5 text-center transition-all duration-300 group cursor-default",
+            c.border
+          )}>
+            <item.icon className={clsx("w-5 h-5 mx-auto mb-3 transition-transform group-hover:scale-110", c.icon)} />
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">{item.label}</p>
+            <div className="flex items-center justify-center">
+              <p className={clsx("font-black text-lg leading-none animate-count-up", c.value)}>{item.value}</p>
+              {item.extra}
+            </div>
+            <p className="text-[10px] text-gray-600 mt-1.5">{item.sub}</p>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -231,41 +336,74 @@ function VaultStats() {
 
 function Hero() {
   return (
-    <section className="pt-16 pb-14 px-4 text-center">
-      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/25 text-pink-400 text-xs font-bold mb-7">
-        <span className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse" />
-        The first fully on-chain liquid staking protocol on Polkadot Hub
+    <section id="hero" className="relative pt-20 pb-20 px-4">
+      <div className="max-w-5xl mx-auto text-center">
+        {/* Protocol badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-bold mb-8 animate-fade-in-up">
+          <Sparkles className="w-3.5 h-3.5" />
+          Native Liquid Staking Protocol on Polkadot Hub
+        </div>
+
+        {/* Main heading */}
+        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05] mb-6 animate-fade-in-up">
+          <span className="bg-gradient-to-br from-white via-pink-100 to-[#E6007A] bg-clip-text text-transparent">
+            Stake. Earn.
+          </span>
+          <br />
+          <span className="bg-gradient-to-r from-[#E6007A] via-purple-400 to-blue-400 bg-clip-text text-transparent animate-shimmer">
+            Go Cross-Chain.
+          </span>
+        </h1>
+
+        <p className="text-gray-400 text-lg md:text-xl mb-8 max-w-lg mx-auto leading-relaxed animate-fade-in-up">
+          Deposit PAS, receive{" "}
+          <span className="text-pink-400 font-black">stDOT</span>.{" "}
+          Earn native staking yield. Send cross-chain via XCM&nbsp;V5. All fully on-chain.
+        </p>
+
+        {/* Feature pills */}
+        <div className="flex flex-wrap justify-center gap-2 mb-8 animate-fade-in-up">
+          <Chip color="pink">No Oracle</Chip>
+          <Chip color="emerald">No Bridging</Chip>
+          <Chip color="blue">No Off-chain Relayer</Chip>
+          <Chip color="purple">XCM V5 Teleport</Chip>
+          <Chip color="fuchsia">Solidity + Rust PVM</Chip>
+        </div>
+
+        {/* CTA buttons */}
+        <div className="flex flex-wrap justify-center gap-4 mb-6 animate-fade-in-up">
+          <a href="#dashboard"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-pink-600 to-pink-500 text-white font-black text-sm shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:from-pink-500 hover:to-pink-400 transition-all">
+            Launch App
+            <ArrowDown className="w-4 h-4" />
+          </a>
+          <a href="https://blockscout-testnet.polkadot.io/address/0x64D3EfbAde442779c68972D5079861Bcf16722E6"
+            target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-white/[0.06] border border-white/[0.10] text-white font-bold text-sm hover:bg-white/[0.10] transition-all">
+            View on Explorer
+            <ExternalLink className="w-4 h-4 text-gray-400" />
+          </a>
+        </div>
+
+        {/* APY banner */}
+        <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 animate-fade-in-up">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-emerald-400 font-black text-sm">~12–15% APY</span>
+          </div>
+          <span className="text-gray-500 text-xs">Polkadot native staking yield</span>
+        </div>
+
+        <VaultStats />
+
+        {/* Scroll indicator */}
+        <div className="mt-14 flex justify-center animate-float">
+          <a href="#dashboard" className="flex flex-col items-center gap-2 text-gray-600 hover:text-gray-400 transition-colors">
+            <span className="text-[10px] uppercase tracking-widest font-semibold">Explore</span>
+            <ArrowDown className="w-4 h-4" />
+          </a>
+        </div>
       </div>
-
-      <h1 className="text-5xl md:text-[4.5rem] font-black tracking-tight leading-[1.05] mb-5">
-        <span className="bg-gradient-to-br from-white via-pink-100 to-[#E6007A] bg-clip-text text-transparent">
-          Native Liquid<br />Staking on<br />Polkadot Hub
-        </span>
-      </h1>
-
-      <p className="text-gray-400 text-lg mb-5 max-w-sm mx-auto">
-        Deposit PAS → receive{" "}
-        <span className="text-pink-400 font-black">stDOT</span>.{" "}
-        Earn yield. Send cross-chain via XCM&nbsp;V5.
-      </p>
-
-      {/* Unique feature chips */}
-      <div className="flex flex-wrap justify-center gap-2 mb-4">
-        <Chip>No Oracle</Chip>
-        <Chip>No Bridging</Chip>
-        <Chip>No Off-chain Relayer</Chip>
-        <Chip>XCM V5 InitiateTeleport</Chip>
-        <Chip>Substrate Staking via Precompile</Chip>
-        <Chip>Cross-VM: Solidity + Rust PVM</Chip>
-      </div>
-
-      {/* APY highlight */}
-      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-sm mt-2">
-        <TrendingUp className="w-4 h-4" />
-        ~12–15% APY · Polkadot native staking yield
-      </div>
-
-      <VaultStats />
     </section>
   );
 }
@@ -280,11 +418,7 @@ function CopyButton({ text }: { text: string }) {
     setTimeout(() => setCopied(false), 2000);
   }
   return (
-    <button
-      onClick={doCopy}
-      className="p-1 rounded-md text-gray-600 hover:text-gray-400 transition-colors"
-      title="Copy"
-    >
+    <button onClick={doCopy} className="p-1 rounded-md text-gray-600 hover:text-gray-400 transition-colors" title="Copy">
       {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
     </button>
   );
@@ -300,7 +434,7 @@ function TokenInput({
 }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-[#0a0a14] border border-white/[0.10] focus-within:border-pink-500/40 transition-colors">
+      <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-[#0a0a14] border border-white/[0.10] focus-within:border-pink-500/40 transition-all duration-200">
         <input
           type="number"
           value={value}
@@ -311,12 +445,12 @@ function TokenInput({
         {maxBal !== undefined && maxBal > 0n && (
           <button
             onClick={() => onChange(formatEther(maxBal))}
-            className="shrink-0 text-[10px] px-2 py-1 rounded-lg bg-pink-500/10 text-pink-400 border border-pink-500/20 hover:bg-pink-500/20 transition-colors font-black"
+            className="shrink-0 text-[10px] px-2.5 py-1 rounded-lg bg-pink-500/10 text-pink-400 border border-pink-500/20 hover:bg-pink-500/20 transition-colors font-black"
           >
             MAX
           </button>
         )}
-        <span className="shrink-0 text-gray-400 font-bold text-sm bg-white/[0.05] px-2.5 py-1 rounded-lg border border-white/[0.08]">
+        <span className="shrink-0 text-gray-400 font-bold text-sm bg-white/[0.05] px-3 py-1 rounded-lg border border-white/[0.08]">
           {token}
         </span>
       </div>
@@ -329,9 +463,9 @@ function TokenInput({
 
 function Panel({ children, accentClass }: { children: React.ReactNode; accentClass?: string }) {
   return (
-    <div className="rounded-2xl bg-[#0d0d18] border border-white/[0.08] overflow-hidden shadow-xl shadow-black/40">
+    <div className="rounded-2xl glass border border-white/[0.08] overflow-hidden shadow-xl shadow-black/40 transition-all duration-300 hover:shadow-2xl">
       {accentClass && <div className={`h-[2px] w-full ${accentClass}`} />}
-      <div className="p-5 space-y-4">{children}</div>
+      <div className="p-6 space-y-4">{children}</div>
     </div>
   );
 }
@@ -342,12 +476,12 @@ function PanelHeader({ icon: Icon, iconClass, title, sub }: {
   return (
     <div>
       <h3 className="font-black text-sm flex items-center gap-2 mb-0.5">
-        <span className={`w-7 h-7 rounded-xl flex items-center justify-center ${iconClass}`}>
-          <Icon className="w-3.5 h-3.5" />
+        <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${iconClass}`}>
+          <Icon className="w-4 h-4" />
         </span>
         {title}
       </h3>
-      <p className="text-xs text-gray-600 pl-9">{sub}</p>
+      <p className="text-xs text-gray-600 pl-10">{sub}</p>
     </div>
   );
 }
@@ -363,7 +497,7 @@ function TxButton({ onClick, disabled, isPending, isSuccess, gradientClass, labe
       onClick={onClick}
       disabled={disabled || isPending}
       className={clsx(
-        "w-full py-4 rounded-xl text-sm font-black transition-all shadow-lg",
+        "w-full py-4 rounded-xl text-sm font-black transition-all duration-200 shadow-lg cursor-pointer",
         "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none",
         gradientClass
       )}
@@ -399,8 +533,8 @@ function DepositPanel({ onSuccess, nativeBal }: { onSuccess: () => void; nativeB
   return (
     <Panel accentClass="bg-gradient-to-r from-pink-600 to-pink-500">
       <PanelHeader icon={ArrowDownToLine} iconClass="bg-pink-500/15 text-pink-400"
-        title="Deposit PAS — Receive stDOT"
-        sub="Bonded via Staking precompile (0x0804) · stDOT rate auto-compounds" />
+        title="Deposit PAS"
+        sub="Bond via Staking precompile (0x0804) · Receive stDOT at current exchange rate" />
       <TokenInput value={amount} onChange={setAmount} token="PAS" maxBal={nativeBal}
         preview={sharesOut !== undefined && Number(amount) > 0
           ? <>You receive ≈ <span className="text-pink-400 font-bold">{fmt(sharesOut as bigint)} stDOT</span></>
@@ -443,8 +577,8 @@ function WithdrawPanel({ onSuccess, address, stDotBal }: {
   return (
     <Panel accentClass="bg-gradient-to-r from-amber-600 to-amber-500">
       <PanelHeader icon={ArrowUpFromLine} iconClass="bg-amber-500/15 text-amber-400"
-        title="Withdraw — Redeem stDOT for PAS"
-        sub="28-day unbonding (1h on testnet) · Burn stDOT → claim PAS" />
+        title="Withdraw PAS"
+        sub="28-day unbonding (1h on testnet) · Burn stDOT, claim PAS after period" />
       <TokenInput value={amount} onChange={setAmount} token="stDOT" maxBal={stDotBal}
         preview={dotOut !== undefined && Number(amount) > 0
           ? <>You receive ≈ <span className="text-amber-400 font-bold">{fmt(dotOut as bigint)} PAS</span> after unbonding</>
@@ -519,7 +653,6 @@ function CrossChainPanel({ onSuccess, stDotBal }: { onSuccess: () => void; stDot
 
   const destBytes32 = dest.length >= 2 ? toBytes32(dest) : undefined;
 
-  // Live SCALE-encoded XCM bytes preview — this is unique to PolkaVault
   const { data: xcmBytes } = useReadContract({
     address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI, functionName: "previewXcmMessage",
     args: Number(amount) > 0 && destBytes32 ? [parseAmt(amount), destBytes32] : undefined,
@@ -535,8 +668,8 @@ function CrossChainPanel({ onSuccess, stDotBal }: { onSuccess: () => void; stDot
   return (
     <Panel accentClass="bg-gradient-to-r from-blue-600 to-indigo-500">
       <PanelHeader icon={ArrowRightLeft} iconClass="bg-blue-500/15 text-blue-400"
-        title="Send Cross-Chain via XCM"
-        sub="XCM V5 InitiateTeleport · Relay Chain · powered by XCM precompile (0x0A0000)" />
+        title="Send Cross-Chain"
+        sub="XCM V5 InitiateTeleport to Relay Chain via precompile (0x0A0000)" />
       <TokenInput value={amount} onChange={setAmount} token="stDOT" maxBal={stDotBal}
         preview={dotOut !== undefined && Number(amount) > 0
           ? <>≈ <span className="text-blue-400 font-bold">{fmt(dotOut as bigint)} PAS</span> arrives on Relay Chain</>
@@ -559,7 +692,7 @@ function CrossChainPanel({ onSuccess, stDotBal }: { onSuccess: () => void; stDot
         gradientClass="bg-gradient-to-r from-blue-600 to-indigo-500 text-white shadow-blue-500/25 hover:shadow-blue-500/40"
         label="Send Cross-Chain" />
 
-      {/* XCM live bytes preview — unique feature */}
+      {/* XCM live bytes preview */}
       <div className="rounded-xl bg-[#080812] border border-blue-500/15 overflow-hidden">
         <button
           onClick={() => setShowPreview((p) => !p)}
@@ -567,10 +700,7 @@ function CrossChainPanel({ onSuccess, stDotBal }: { onSuccess: () => void; stDot
         >
           <span className="flex items-center gap-1.5 font-bold">
             <Eye className="w-3.5 h-3.5 text-blue-400" />
-            <span className="text-blue-400">Preview raw XCM SCALE bytes</span>
-            <span className="text-[10px] text-gray-600 font-normal ml-1">
-              (live on-chain encoding — inspect before sending)
-            </span>
+            <span className="text-blue-400">Preview XCM SCALE bytes</span>
           </span>
           <span className="text-gray-600">{showPreview ? "▲" : "▼"}</span>
         </button>
@@ -578,7 +708,7 @@ function CrossChainPanel({ onSuccess, stDotBal }: { onSuccess: () => void; stDot
           <div className="border-t border-blue-500/10 px-3 pb-3 pt-2">
             {!bytesHex ? (
               <p className="text-[11px] text-gray-600 italic">
-                Fill amount + destination above to see the live SCALE-encoded XCM V5 message
+                Fill amount + destination to preview the SCALE-encoded XCM V5 message
               </p>
             ) : (
               <>
@@ -591,18 +721,15 @@ function CrossChainPanel({ onSuccess, stDotBal }: { onSuccess: () => void; stDot
                 <code className="text-[10px] text-emerald-400/70 font-mono break-all leading-relaxed block">
                   {bytesHex}
                 </code>
-                <p className="text-[10px] text-gray-700 mt-2">
-                  SCALE-encoded on-chain · No off-chain tools · No relayer
-                </p>
               </>
             )}
           </div>
         )}
       </div>
 
-      {/* XCM flow diagram */}
+      {/* XCM flow mini-diagram */}
       <div className="rounded-xl bg-blue-950/20 border border-blue-500/10 p-3">
-        <p className="text-[10px] text-blue-400 font-bold mb-2">XCM V5 Message Flow</p>
+        <p className="text-[10px] text-blue-400 font-bold mb-2">Message Flow</p>
         <div className="flex items-center gap-1.5 text-[10px] text-gray-500 flex-wrap">
           <span className="px-2 py-1 bg-blue-500/10 rounded-lg text-blue-400 font-bold">Hub</span>
           <ChevronRight className="w-2.5 h-2.5 shrink-0" />
@@ -660,19 +787,19 @@ function CompoundPanel({ onSuccess }: { onSuccess: () => void }) {
   return (
     <Panel accentClass="bg-gradient-to-r from-yellow-500 to-orange-400">
       <PanelHeader icon={Zap} iconClass="bg-yellow-500/15 text-yellow-400"
-        title="Compound Staking Rewards"
-        sub="Permissionless · Earn keeper fee · Exchange rate grows for every stDOT holder" />
+        title="Compound Rewards"
+        sub="Permissionless · Earn keeper fee · Rate grows for all stDOT holders" />
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-xl bg-[#0e0c06] border border-yellow-500/15 p-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-[#0e0c06] border border-yellow-500/15 p-3.5">
           <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Exchange Rate</p>
           <p className="font-black text-xl font-mono text-yellow-400 leading-none">
             {rate !== undefined ? fmtRate(rate as bigint) : "—"}
           </p>
           <p className="text-[10px] text-gray-600 mt-1">PAS / stDOT</p>
         </div>
-        <div className="rounded-xl bg-[#0e0c06] border border-emerald-500/15 p-3">
+        <div className="rounded-xl bg-[#0e0c06] border border-emerald-500/15 p-3.5">
           <div className="flex items-center justify-between mb-1">
             <p className="text-[10px] text-gray-500 uppercase tracking-wider">Realized APY</p>
             {pvmActive && (
@@ -686,24 +813,24 @@ function CompoundPanel({ onSuccess }: { onSuccess: () => void }) {
             {realApy ?? "—"}
           </p>
           <p className="text-[10px] text-gray-600 mt-1">
-            {pvmActive ? "computed by Rust PolkaVM" : lastCompound ? `last: ${lastCompound}` : "awaiting compound"}
+            {pvmActive ? "via Rust PolkaVM" : lastCompound ? `last: ${lastCompound}` : "awaiting compound"}
           </p>
         </div>
       </div>
 
       {/* Keeper fee callout */}
       {feeBps !== undefined && feeBps > 0n && (
-        <div className="rounded-xl bg-emerald-950/30 border border-emerald-500/20 px-3 py-2.5 flex items-center justify-between">
+        <div className="rounded-xl bg-emerald-950/30 border border-emerald-500/20 px-4 py-3 flex items-center justify-between">
           <div>
             <p className="text-xs font-black text-emerald-400">
               Earn {Number(feeBps) / 100}% keeper reward
             </p>
             <p className="text-[10px] text-gray-600 mt-0.5">
-              Paid instantly to your wallet when you call compound()
+              Paid instantly to your wallet
             </p>
           </div>
           {keeperEarn && (
-            <p className="text-xs font-black text-emerald-300 shrink-0 ml-2">
+            <p className="text-sm font-black text-emerald-300 shrink-0 ml-2">
               +{keeperEarn} PAS
             </p>
           )}
@@ -759,97 +886,92 @@ function ValidatorAdmin() {
   }
 
   return (
-    <div className="max-w-xl mx-auto px-4 mb-6">
-      <div className="rounded-2xl bg-[#0d0d18] border border-violet-500/25 overflow-hidden shadow-xl shadow-black/40">
-        <div className="h-[2px] bg-gradient-to-r from-violet-600 to-purple-500" />
-        <div className="p-5 space-y-4">
-          <div>
-            <h3 className="font-black text-sm flex items-center gap-2 mb-0.5">
-              <span className="w-7 h-7 rounded-xl flex items-center justify-center bg-violet-500/15 text-violet-400">
-                <Vote className="w-3.5 h-3.5" />
-              </span>
-              Nominate Validators
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 font-bold ml-1">
-                Owner Only
-              </span>
-            </h3>
-            <p className="text-xs text-gray-600 pl-9">
-              Staking precompile nominate() · Required for bonded PAS to earn rewards
-            </p>
-          </div>
+    <div className="max-w-2xl mx-auto px-4 mb-8">
+      <Panel accentClass="bg-gradient-to-r from-violet-600 to-purple-500">
+        <div>
+          <h3 className="font-black text-sm flex items-center gap-2 mb-0.5">
+            <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-violet-500/15 text-violet-400">
+              <Vote className="w-4 h-4" />
+            </span>
+            Nominate Validators
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 font-bold ml-1">
+              Owner Only
+            </span>
+          </h3>
+          <p className="text-xs text-gray-600 pl-10">
+            Staking precompile nominate() · Required for bonded PAS to earn rewards
+          </p>
+        </div>
 
-          {/* Current nominators */}
-          {nominators.length > 0 && (
-            <div className="rounded-xl bg-[#0a0a14] border border-white/[0.07] p-3 space-y-1.5">
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2">
-                Currently Nominating ({nominators.length})
-              </p>
-              {nominators.map((n, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
-                  <code className="text-[10px] text-violet-300/70 font-mono break-all">{n}</code>
-                  <CopyButton text={n} />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Input rows */}
-          <div className="space-y-2">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
-              Validator Public Keys (bytes32 / 0x hex)
+        {nominators.length > 0 && (
+          <div className="rounded-xl bg-[#0a0a14] border border-white/[0.07] p-3 space-y-1.5">
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2">
+              Currently Nominating ({nominators.length})
             </p>
-            {rows.map((row, i) => (
+            {nominators.map((n, i) => (
               <div key={i} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={row}
-                  onChange={(e) => updateRow(i, e.target.value)}
-                  placeholder={`0x${"0".repeat(64)}`}
-                  className="flex-1 px-3 py-2.5 rounded-xl bg-[#0a0a14] border border-white/[0.10] text-xs text-white placeholder-gray-700 outline-none focus:border-violet-500/40 transition-colors font-mono"
-                />
-                {rows.length > 1 && (
-                  <button onClick={() => removeRow(i)}
-                    className="p-2 rounded-lg text-gray-700 hover:text-red-400 hover:bg-red-500/10 transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
+                <code className="text-[10px] text-violet-300/70 font-mono break-all">{n}</code>
+                <CopyButton text={n} />
               </div>
             ))}
-            <button onClick={addRow}
-              className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-violet-400 transition-colors px-1 py-1">
-              <Plus className="w-3.5 h-3.5" />
-              Add validator
-            </button>
           </div>
+        )}
 
-          <button
-            onClick={() => writeContract({
-              address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI,
-              functionName: "nominateValidators",
-              args: [validRows.map(toBytes32)],
-            })}
-            disabled={!canSubmit}
-            className={clsx(
-              "w-full py-4 rounded-xl text-sm font-black transition-all shadow-lg",
-              "bg-gradient-to-r from-violet-600 to-purple-500 text-white shadow-violet-500/25 hover:shadow-violet-500/40",
-              "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-            )}
-          >
-            {isPending || isConfirming ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" /> Confirming...
-              </span>
-            ) : isSuccess ? (
-              <span className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4" /> Validators Nominated!
-              </span>
-            ) : (
-              `Nominate ${validRows.length > 0 ? validRows.length : ""} Validator${validRows.length !== 1 ? "s" : ""}`
-            )}
+        <div className="space-y-2">
+          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+            Validator Public Keys (bytes32)
+          </p>
+          {rows.map((row, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={row}
+                onChange={(e) => updateRow(i, e.target.value)}
+                placeholder={`0x${"0".repeat(64)}`}
+                className="flex-1 px-3 py-2.5 rounded-xl bg-[#0a0a14] border border-white/[0.10] text-xs text-white placeholder-gray-700 outline-none focus:border-violet-500/40 transition-colors font-mono"
+              />
+              {rows.length > 1 && (
+                <button onClick={() => removeRow(i)}
+                  className="p-2 rounded-lg text-gray-700 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ))}
+          <button onClick={addRow}
+            className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-violet-400 transition-colors px-1 py-1">
+            <Plus className="w-3.5 h-3.5" />
+            Add validator
           </button>
         </div>
-      </div>
+
+        <button
+          onClick={() => writeContract({
+            address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI,
+            functionName: "nominateValidators",
+            args: [validRows.map(toBytes32)],
+          })}
+          disabled={!canSubmit}
+          className={clsx(
+            "w-full py-4 rounded-xl text-sm font-black transition-all shadow-lg cursor-pointer",
+            "bg-gradient-to-r from-violet-600 to-purple-500 text-white shadow-violet-500/25 hover:shadow-violet-500/40",
+            "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+          )}
+        >
+          {isPending || isConfirming ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> Confirming...
+            </span>
+          ) : isSuccess ? (
+            <span className="flex items-center justify-center gap-2">
+              <CheckCircle2 className="w-4 h-4" /> Validators Nominated!
+            </span>
+          ) : (
+            `Nominate ${validRows.length > 0 ? validRows.length : ""} Validator${validRows.length !== 1 ? "s" : ""}`
+          )}
+        </button>
+      </Panel>
     </div>
   );
 }
@@ -869,7 +991,6 @@ function Dashboard() {
   });
   const [stDotBal, dotVal] = (position as [bigint, bigint]) ?? [0n, 0n];
   const { data: nativeBal } = useBalance({ address });
-  // Earned yield ≈ current PAS value minus initial deposit (assumes entry near rate 1.0)
   const earnedPas = stDotBal > 0n && dotVal > stDotBal ? dotVal - stDotBal : 0n;
   const earnedPct = stDotBal > 0n && earnedPas > 0n
     ? ((Number(earnedPas) / Number(stDotBal)) * 100).toFixed(3)
@@ -877,76 +998,88 @@ function Dashboard() {
 
   if (!isConnected) {
     return (
-      <div className="max-w-md mx-auto px-4 mb-14">
-        <div className="rounded-2xl bg-[#0d0d18] border border-white/[0.08] p-12 text-center shadow-xl shadow-black/40">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-600/20 to-purple-600/20 border border-pink-500/20 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-pink-500/10">
-            <Shield className="w-8 h-8 text-pink-400" />
+      <section id="dashboard" className="py-20 px-4">
+        <div className="max-w-md mx-auto">
+          <div className="rounded-2xl glass border border-white/[0.08] p-14 text-center shadow-xl shadow-black/40">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-600/20 to-purple-600/20 border border-pink-500/20 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-500/10">
+              <Shield className="w-10 h-10 text-pink-400" />
+            </div>
+            <h3 className="text-xl font-black mb-3">Connect Your Wallet</h3>
+            <p className="text-gray-500 text-sm mb-8 leading-relaxed max-w-xs mx-auto">
+              Connect to Polkadot Hub Testnet to deposit PAS, earn staking yield, and send cross-chain.
+            </p>
+            <div className="flex justify-center"><ConnectButton /></div>
           </div>
-          <h3 className="text-lg font-black mb-2">Connect Your Wallet</h3>
-          <p className="text-gray-500 text-sm mb-7 leading-relaxed max-w-xs mx-auto">
-            Connect to Polkadot Hub Testnet to deposit PAS, earn ~12–15% staking yield, and send cross-chain.
-          </p>
-          <div className="flex justify-center"><ConnectButton /></div>
         </div>
-      </div>
+      </section>
     );
   }
 
+  const tabs = [
+    { id: "deposit" as Tab, label: "Deposit", icon: ArrowDownToLine, color: "pink" },
+    { id: "withdraw" as Tab, label: "Withdraw", icon: ArrowUpFromLine, color: "amber" },
+    { id: "crosschain" as Tab, label: "Cross-Chain", icon: ArrowRightLeft, color: "blue" },
+    { id: "compound" as Tab, label: "Compound", icon: Zap, color: "yellow" },
+  ];
+
   return (
-    <div className="max-w-xl mx-auto px-4 space-y-4 mb-14">
-      {/* Position card */}
-      <div className="rounded-2xl bg-[#0d0d18] border border-white/[0.08] overflow-hidden shadow-xl shadow-black/40">
-        <div className="h-[2px] bg-gradient-to-r from-pink-600 via-purple-500 to-indigo-500" />
-        <div className="p-5 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Your Position</p>
-            <p className="text-3xl font-black">
-              {fmt(stDotBal)}{" "}<span className="text-pink-400">stDOT</span>
-            </p>
-            <p className="text-sm text-gray-500 mt-1">≈ {fmt(dotVal)} PAS</p>
-            {earnedPct && (
-              <div className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/15 text-emerald-400 text-xs font-bold">
-                <TrendingUp className="w-3 h-3" />
-                +{fmt(earnedPas)} PAS earned (+{earnedPct}%)
-              </div>
-            )}
-          </div>
-          <div className="text-right space-y-1.5">
-            <div className="flex items-center gap-1.5 justify-end text-emerald-400 text-sm font-black">
-              <TrendingUp className="w-3.5 h-3.5" />~12–15% APY
+    <section id="dashboard" className="py-16 px-4">
+      <div className="max-w-2xl mx-auto space-y-5">
+        {/* Section header */}
+        <div className="text-center mb-8">
+          <p className="text-xs text-pink-400 font-black tracking-widest uppercase mb-2">Dashboard</p>
+          <h2 className="text-3xl font-black">Manage Your Position</h2>
+        </div>
+
+        {/* Position card */}
+        <div className="rounded-2xl glass border border-white/[0.08] overflow-hidden shadow-xl shadow-black/40">
+          <div className="h-[2px] bg-gradient-to-r from-pink-600 via-purple-500 to-indigo-500" />
+          <div className="p-6 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1.5">Your Position</p>
+              <p className="text-4xl font-black leading-tight">
+                {fmt(stDotBal)}{" "}<span className="text-pink-400">stDOT</span>
+              </p>
+              <p className="text-sm text-gray-500 mt-1">≈ {fmt(dotVal)} PAS</p>
+              {earnedPct && (
+                <div className="inline-flex items-center gap-1 mt-2.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/15 text-emerald-400 text-xs font-bold">
+                  <TrendingUp className="w-3 h-3" />
+                  +{fmt(earnedPas)} PAS earned (+{earnedPct}%)
+                </div>
+              )}
             </div>
-            <p className="text-xs text-gray-600">Exchange rate grows each era</p>
-            {nativeBal && (
-              <p className="text-[11px] font-mono text-gray-600">{fmt(nativeBal.value)} PAS available</p>
-            )}
+            <div className="text-right space-y-2">
+              <div className="flex items-center gap-1.5 justify-end text-emerald-400 text-sm font-black">
+                <TrendingUp className="w-3.5 h-3.5" />~12–15% APY
+              </div>
+              <p className="text-xs text-gray-600">Rate grows each era</p>
+              {nativeBal && (
+                <p className="text-[11px] font-mono text-gray-600">{fmt(nativeBal.value)} PAS available</p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Tab bar */}
-      <div className="flex rounded-xl bg-[#0a0a14] border border-white/[0.07] p-1 gap-1">
-        {([
-          { id: "deposit",    label: "Deposit",     icon: ArrowDownToLine },
-          { id: "withdraw",   label: "Withdraw",    icon: ArrowUpFromLine },
-          { id: "crosschain", label: "Cross-Chain", icon: ArrowRightLeft  },
-          { id: "compound",   label: "Compound",    icon: Zap             },
-        ] as const).map(({ id, label, icon: Icon }) => (
-          <button key={id} onClick={() => setTab(id)}
-            className={clsx(
-              "flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold transition-all",
-              tab === id ? "bg-white/[0.08] text-white shadow-sm" : "text-gray-600 hover:text-gray-400"
-            )}>
-            <Icon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{label}</span>
-          </button>
-        ))}
-      </div>
+        {/* Tab bar */}
+        <div className="flex rounded-xl bg-[#0a0a14] border border-white/[0.07] p-1 gap-1">
+          {tabs.map(({ id, label, icon: Icon }) => (
+            <button key={id} onClick={() => setTab(id)}
+              className={clsx(
+                "flex-1 flex items-center justify-center gap-1.5 py-3 rounded-lg text-xs font-bold transition-all duration-200",
+                tab === id ? "bg-white/[0.08] text-white shadow-sm" : "text-gray-600 hover:text-gray-400"
+              )}>
+              <Icon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{label}</span>
+            </button>
+          ))}
+        </div>
 
-      {tab === "deposit"    && <DepositPanel    onSuccess={refetchPosition} nativeBal={nativeBal?.value ?? 0n} />}
-      {tab === "withdraw"   && <WithdrawPanel   onSuccess={refetchPosition} address={address!} stDotBal={stDotBal} />}
-      {tab === "crosschain" && <CrossChainPanel onSuccess={refetchPosition} stDotBal={stDotBal} />}
-      {tab === "compound"   && <CompoundPanel   onSuccess={refetchPosition} />}
-    </div>
+        {tab === "deposit"    && <DepositPanel    onSuccess={refetchPosition} nativeBal={nativeBal?.value ?? 0n} />}
+        {tab === "withdraw"   && <WithdrawPanel   onSuccess={refetchPosition} address={address!} stDotBal={stDotBal} />}
+        {tab === "crosschain" && <CrossChainPanel onSuccess={refetchPosition} stDotBal={stDotBal} />}
+        {tab === "compound"   && <CompoundPanel   onSuccess={refetchPosition} />}
+      </div>
+    </section>
   );
 }
 
@@ -954,102 +1087,63 @@ function Dashboard() {
 
 function HowItWorks() {
   const steps = [
-    { n: "01", color: "pink"    as const, title: "Deposit PAS",    desc: "Send native PAS to the vault. Bonded via Staking precompile (0x0804). Receive stDOT at the current exchange rate." },
-    { n: "02", color: "emerald" as const, title: "Earn Yield",     desc: "Rewards accumulate each era. compound() re-bonds them — the stDOT/PAS exchange rate grows for all holders automatically." },
-    { n: "03", color: "blue"    as const, title: "stDOT is Liquid", desc: "Transfer stDOT like any ERC-20. No lock-up. Redeem PAS anytime after the unbonding period via claimWithdrawal()." },
-    { n: "04", color: "purple"  as const, title: "Send Cross-Chain", desc: "Redeem stDOT and teleport PAS to the Relay Chain via XCM V5 InitiateTeleport, executed by the XCM precompile (0x0A0000). Fully on-chain." },
+    { n: "01", color: "pink" as const, icon: ArrowDownToLine, title: "Deposit PAS", desc: "Send native PAS to the vault. Bonded via Staking precompile (0x0804). Receive stDOT at the current exchange rate." },
+    { n: "02", color: "emerald" as const, icon: TrendingUp, title: "Earn Yield", desc: "Rewards accumulate each era. compound() re-bonds them — the stDOT/PAS exchange rate grows for all holders." },
+    { n: "03", color: "blue" as const, icon: ArrowRightLeft, title: "stDOT is Liquid", desc: "Transfer stDOT like any ERC-20. No lock-up. Redeem PAS anytime after the unbonding period." },
+    { n: "04", color: "purple" as const, icon: Globe, title: "Go Cross-Chain", desc: "Teleport PAS to the Relay Chain via XCM V5 InitiateTeleport. Executed by the XCM precompile. Fully on-chain." },
   ];
   const cfg = {
-    pink:    { num: "text-pink-600/20",    border: "border-pink-500/10",    hover: "hover:border-pink-500/30    hover:shadow-pink-500/5"    },
-    emerald: { num: "text-emerald-600/20", border: "border-emerald-500/10", hover: "hover:border-emerald-500/30 hover:shadow-emerald-500/5" },
-    blue:    { num: "text-blue-600/20",    border: "border-blue-500/10",    hover: "hover:border-blue-500/30    hover:shadow-blue-500/5"    },
-    purple:  { num: "text-purple-600/20",  border: "border-purple-500/10",  hover: "hover:border-purple-500/30  hover:shadow-purple-500/5"  },
+    pink:    { num: "text-pink-600/15", border: "border-pink-500/10", hover: "hover:border-pink-500/30 hover:shadow-pink-500/5", icon: "text-pink-400 bg-pink-500/10" },
+    emerald: { num: "text-emerald-600/15", border: "border-emerald-500/10", hover: "hover:border-emerald-500/30 hover:shadow-emerald-500/5", icon: "text-emerald-400 bg-emerald-500/10" },
+    blue:    { num: "text-blue-600/15", border: "border-blue-500/10", hover: "hover:border-blue-500/30 hover:shadow-blue-500/5", icon: "text-blue-400 bg-blue-500/10" },
+    purple:  { num: "text-purple-600/15", border: "border-purple-500/10", hover: "hover:border-purple-500/30 hover:shadow-purple-500/5", icon: "text-purple-400 bg-purple-500/10" },
   };
   return (
-    <section className="max-w-5xl mx-auto px-4 py-16 border-t border-white/[0.05]">
-      <div className="text-center mb-10">
-        <p className="text-xs text-pink-400 font-black tracking-widest uppercase mb-2">Flow</p>
-        <h2 className="text-3xl font-black">How it works</h2>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {steps.map((s) => {
-          const c = cfg[s.color];
-          return (
-            <div key={s.n} className={clsx("rounded-2xl bg-[#0d0d18] border p-6 transition-all shadow-lg", c.border, c.hover)}>
-              <p className={clsx("text-7xl font-black mb-4 select-none leading-none", c.num)}>{s.n}</p>
-              <p className="font-black text-sm mb-2">{s.title}</p>
-              <p className="text-xs text-gray-500 leading-relaxed">{s.desc}</p>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-// ─── Precompile section ───────────────────────────────────────────────────────
-
-function PrecompileInfo() {
-  const items = [
-    {
-      name: "Staking",  short: "0x0804",
-      full: "0x0000000000000000000000000000000000000804",
-      desc: "bond() · bondExtra() · unbond() · withdrawUnbonded()",
-      note: "0 bytes EVM code · EXTCODESIZE check bypassed via low-level .call()",
-      color: "emerald" as const,
-    },
-    {
-      name: "XCM",  short: "0x0A0000",
-      full: "0x00000000000000000000000000000000000a0000",
-      desc: "execute() · XCM V5 InitiateTeleport to Relay Chain",
-      note: "10 bytes EVM code · high-level interface calls work",
-      color: "blue" as const,
-    },
-    {
-      name: "Balances",  short: "0x0402",
-      full: "0x0000000000000000000000000000000000000402",
-      desc: "Native PAS as ERC-20 · balance queries",
-      note: "0 bytes EVM code · EXTCODESIZE check bypassed via low-level .call()",
-      color: "pink" as const,
-    },
-  ];
-  const cfg = {
-    emerald: { border: "border-emerald-500/15 hover:border-emerald-500/30", badge: "bg-emerald-500/10 text-emerald-400" },
-    blue:    { border: "border-blue-500/15    hover:border-blue-500/30",    badge: "bg-blue-500/10    text-blue-400"    },
-    pink:    { border: "border-pink-500/15    hover:border-pink-500/30",    badge: "bg-pink-500/10    text-pink-400"    },
-  };
-  return (
-    <section className="max-w-5xl mx-auto px-4 pb-16 border-t border-white/[0.05] pt-16">
-      <div className="text-center mb-8">
-        <p className="text-xs text-pink-400 font-black tracking-widest uppercase mb-2">Track 2 · Precompiles</p>
-        <h2 className="text-3xl font-black mb-3">Polkadot Hub Precompiles</h2>
-        <p className="text-gray-500 text-sm max-w-xl mx-auto leading-relaxed">
-          Solidity 0.8 inserts an{" "}
-          <code className="text-pink-400 bg-pink-500/10 px-1.5 py-0.5 rounded text-xs font-bold">EXTCODESIZE</code>{" "}
-          check before every interface call. Hub precompiles expose 0 bytes of EVM code — PolkaVault uses
-          low-level{" "}
-          <code className="text-pink-400 bg-pink-500/10 px-1.5 py-0.5 rounded text-xs font-bold">.call()</code>{" "}
-          to bypass this. Only works on Polkadot Hub.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {items.map((p) => {
-          const c = cfg[p.color];
-          return (
-            <div key={p.name} className={clsx("rounded-2xl bg-[#0d0d18] border p-5 transition-all shadow-lg", c.border)}>
-              <div className="flex items-center justify-between mb-4">
-                <span className={clsx("text-xs font-black px-2.5 py-1 rounded-xl", c.badge)}>{p.name}</span>
-                <code className="text-[10px] text-gray-600 font-mono">{p.short}</code>
+    <section id="how-it-works" className="py-20 px-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-14">
+          <p className="text-xs text-pink-400 font-black tracking-widest uppercase mb-2">Flow</p>
+          <h2 className="text-4xl font-black mb-3">How It Works</h2>
+          <p className="text-gray-500 text-sm max-w-md mx-auto">
+            Four steps from deposit to cross-chain. No oracle, no bridging, no off-chain relayer.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {steps.map((s) => {
+            const c = cfg[s.color];
+            return (
+              <div key={s.n} className={clsx(
+                "rounded-2xl glass border p-7 transition-all duration-300 shadow-lg group cursor-default",
+                c.border, c.hover
+              )}>
+                <div className="flex items-center justify-between mb-5">
+                  <p className={clsx("text-6xl font-black select-none leading-none", c.num)}>{s.n}</p>
+                  <div className={clsx("w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110", c.icon)}>
+                    <s.icon className="w-5 h-5" />
+                  </div>
+                </div>
+                <p className="font-black text-sm mb-2">{s.title}</p>
+                <p className="text-xs text-gray-500 leading-relaxed">{s.desc}</p>
               </div>
-              <p className="text-sm text-gray-300 font-bold mb-3">{p.desc}</p>
-              <div className="flex items-start gap-1.5">
-                <Cpu className="w-3 h-3 text-gray-600 mt-0.5 shrink-0" />
-                <p className="text-[11px] text-gray-600 leading-relaxed">{p.note}</p>
-              </div>
-              <code className="text-[9px] text-gray-700 font-mono mt-3 block break-all">{p.full}</code>
+            );
+          })}
+        </div>
+
+        {/* Connection lines (visual) */}
+        <div className="hidden lg:flex justify-center mt-8 gap-2 items-center">
+          {["Deposit", "Compound", "Transfer", "Teleport"].map((label, i) => (
+            <div key={label} className="flex items-center gap-2">
+              <span className="text-[10px] text-gray-600 font-semibold">{label}</span>
+              {i < 3 && (
+                <div className="flex items-center gap-1">
+                  <div className="w-8 h-[1px] bg-gradient-to-r from-gray-700 to-gray-600" />
+                  <ChevronRight className="w-3 h-3 text-gray-600" />
+                  <div className="w-8 h-[1px] bg-gradient-to-r from-gray-600 to-gray-700" />
+                </div>
+              )}
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -1064,62 +1158,239 @@ function CrossVMSection() {
   const pvmActive = yieldOptAddr && yieldOptAddr !== "0x0000000000000000000000000000000000000000";
 
   const steps = [
-    { label: "Solidity", desc: "compound() called", icon: Zap, color: "text-yellow-400", bg: "bg-yellow-500/10" },
-    { label: "pallet-revive", desc: "Routes cross-VM", icon: ArrowRightLeft, color: "text-blue-400", bg: "bg-blue-500/10" },
-    { label: "Rust PVM", desc: "computeApy()", icon: Cpu, color: "text-fuchsia-400", bg: "bg-fuchsia-500/10" },
-    { label: "Result", desc: "APY on-chain", icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+    { label: "Solidity", desc: "compound() called", icon: Zap, color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/20" },
+    { label: "pallet-revive", desc: "Routes cross-VM", icon: ArrowRightLeft, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+    { label: "Rust PVM", desc: "computeApy()", icon: Cpu, color: "text-fuchsia-400", bg: "bg-fuchsia-500/10", border: "border-fuchsia-500/20" },
+    { label: "Result", desc: "APY on-chain", icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
   ];
 
   return (
-    <section className="max-w-5xl mx-auto px-4 pb-16 border-t border-white/[0.05] pt-16">
-      <div className="text-center mb-8">
-        <p className="text-xs text-fuchsia-400 font-black tracking-widest uppercase mb-2">Track 2 · PVM Smart Contracts</p>
-        <h2 className="text-3xl font-black mb-3">Cross-VM Architecture</h2>
-        <p className="text-gray-500 text-sm max-w-xl mx-auto leading-relaxed">
-          PolkaVault delegates APY computation to a{" "}
-          <span className="text-fuchsia-400 font-bold">Rust PolkaVM contract</span>{" "}
-          via pallet-revive&apos;s transparent VM routing. Solidity (EVM) calls Rust (RISC-V) natively on-chain.
-        </p>
-      </div>
-
-      {/* Flow diagram */}
-      <div className="flex items-center justify-center gap-2 mb-8 flex-wrap">
-        {steps.map((s, i) => (
-          <div key={s.label} className="flex items-center gap-2">
-            <div className="rounded-2xl bg-[#0d0d18] border border-white/[0.06] p-4 text-center min-w-[120px]">
-              <div className={clsx("w-8 h-8 rounded-xl mx-auto mb-2 flex items-center justify-center", s.bg)}>
-                <s.icon className={clsx("w-4 h-4", s.color)} />
-              </div>
-              <p className={clsx("text-xs font-black", s.color)}>{s.label}</p>
-              <p className="text-[10px] text-gray-600 mt-0.5">{s.desc}</p>
-            </div>
-            {i < steps.length - 1 && <ChevronRight className="w-4 h-4 text-gray-700 shrink-0" />}
-          </div>
-        ))}
-      </div>
-
-      {/* Status card */}
-      <div className={clsx(
-        "max-w-md mx-auto rounded-2xl border p-5 text-center",
-        pvmActive ? "bg-fuchsia-950/20 border-fuchsia-500/20" : "bg-[#0d0d18] border-white/[0.06]"
-      )}>
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <div className={clsx(
-            "w-2 h-2 rounded-full",
-            pvmActive ? "bg-fuchsia-400 shadow-[0_0_8px_rgba(217,70,239,0.5)]" : "bg-gray-600"
-          )} />
-          <p className={clsx("text-sm font-black", pvmActive ? "text-fuchsia-400" : "text-gray-500")}>
-            {pvmActive ? "Rust PVM Active" : "PVM Not Connected"}
+    <section id="cross-vm" className="py-20 px-4">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-14">
+          <p className="text-xs text-fuchsia-400 font-black tracking-widest uppercase mb-2">Track 2 · PVM Smart Contracts</p>
+          <h2 className="text-4xl font-black mb-3">Cross-VM Architecture</h2>
+          <p className="text-gray-500 text-sm max-w-xl mx-auto leading-relaxed">
+            PolkaVault delegates APY computation to a{" "}
+            <span className="text-fuchsia-400 font-bold">Rust PolkaVM contract</span>{" "}
+            via pallet-revive&apos;s transparent VM routing. Solidity calls Rust natively on-chain.
           </p>
         </div>
-        <p className="text-[11px] text-gray-600">
-          {pvmActive
-            ? `YieldOptimizer deployed at ${(yieldOptAddr as string).slice(0, 10)}…${(yieldOptAddr as string).slice(-6)}`
-            : "APY computed in Solidity fallback mode — set yieldOptimizer address to enable cross-VM"
-          }
-        </p>
+
+        {/* Flow diagram */}
+        <div className="flex items-center justify-center gap-3 mb-10 flex-wrap">
+          {steps.map((s, i) => (
+            <div key={s.label} className="flex items-center gap-3">
+              <div className={clsx(
+                "rounded-2xl glass border p-5 text-center min-w-[140px] transition-all duration-300 hover:scale-105",
+                s.border
+              )}>
+                <div className={clsx("w-10 h-10 rounded-xl mx-auto mb-3 flex items-center justify-center", s.bg)}>
+                  <s.icon className={clsx("w-5 h-5", s.color)} />
+                </div>
+                <p className={clsx("text-xs font-black", s.color)}>{s.label}</p>
+                <p className="text-[10px] text-gray-600 mt-0.5">{s.desc}</p>
+              </div>
+              {i < steps.length - 1 && (
+                <div className="hidden sm:flex items-center">
+                  <div className="w-6 h-[1px] bg-gray-700" />
+                  <ChevronRight className="w-4 h-4 text-gray-600" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Status + info cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl mx-auto">
+          {/* Status card */}
+          <div className={clsx(
+            "rounded-2xl border p-6 text-center transition-all duration-300",
+            pvmActive ? "glass border-fuchsia-500/20" : "glass border-white/[0.06]"
+          )}>
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <div className={clsx(
+                "w-2.5 h-2.5 rounded-full",
+                pvmActive ? "bg-fuchsia-400 shadow-[0_0_12px_rgba(217,70,239,0.5)] animate-pulse" : "bg-gray-600"
+              )} />
+              <p className={clsx("text-base font-black", pvmActive ? "text-fuchsia-400" : "text-gray-500")}>
+                {pvmActive ? "Rust PVM Active" : "PVM Not Connected"}
+              </p>
+            </div>
+            <p className="text-[11px] text-gray-600 leading-relaxed">
+              {pvmActive
+                ? `YieldOptimizer deployed at ${(yieldOptAddr as string).slice(0, 10)}...${(yieldOptAddr as string).slice(-6)}`
+                : "APY computed in Solidity fallback mode"
+              }
+            </p>
+          </div>
+
+          {/* Tech card */}
+          <div className="rounded-2xl glass border border-white/[0.06] p-6">
+            <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Tech Stack</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs">
+                <Box className="w-3.5 h-3.5 text-yellow-400" />
+                <span className="text-gray-500">EVM:</span>
+                <span className="text-gray-300 font-semibold">Solidity 0.8.28</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <Cpu className="w-3.5 h-3.5 text-fuchsia-400" />
+                <span className="text-gray-500">PVM:</span>
+                <span className="text-gray-300 font-semibold">Rust + RISC-V (2,089 bytes)</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <ArrowRightLeft className="w-3.5 h-3.5 text-blue-400" />
+                <span className="text-gray-500">Bridge:</span>
+                <span className="text-gray-300 font-semibold">pallet-revive cross-VM</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
+  );
+}
+
+// ─── Precompile section ───────────────────────────────────────────────────────
+
+function PrecompileInfo() {
+  const items = [
+    {
+      name: "Staking", short: "0x0804",
+      full: "0x0000000000000000000000000000000000000804",
+      fns: ["bond()", "bondExtra()", "unbond()", "withdrawUnbonded()", "nominate()"],
+      note: "0 bytes EVM code · low-level .call() bypass",
+      color: "emerald" as const,
+    },
+    {
+      name: "XCM", short: "0x0A0000",
+      full: "0x00000000000000000000000000000000000a0000",
+      fns: ["execute()"],
+      note: "10 bytes EVM code · high-level interface OK",
+      color: "blue" as const,
+    },
+    {
+      name: "Balances", short: "0x0402",
+      full: "0x0000000000000000000000000000000000000402",
+      fns: ["Native PAS as ERC-20"],
+      note: "0 bytes EVM code · low-level .call() bypass",
+      color: "pink" as const,
+    },
+  ];
+  const cfg = {
+    emerald: { border: "border-emerald-500/15 hover:border-emerald-500/30", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
+    blue:    { border: "border-blue-500/15 hover:border-blue-500/30",       badge: "bg-blue-500/10 text-blue-400 border-blue-500/20"          },
+    pink:    { border: "border-pink-500/15 hover:border-pink-500/30",       badge: "bg-pink-500/10 text-pink-400 border-pink-500/20"          },
+  };
+  return (
+    <section id="precompiles" className="py-20 px-4">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-14">
+          <p className="text-xs text-pink-400 font-black tracking-widest uppercase mb-2">Track 2 · Precompiles</p>
+          <h2 className="text-4xl font-black mb-3">Polkadot Hub Precompiles</h2>
+          <p className="text-gray-500 text-sm max-w-xl mx-auto leading-relaxed">
+            Solidity 0.8 inserts an{" "}
+            <code className="text-pink-400 bg-pink-500/10 px-1.5 py-0.5 rounded text-xs font-bold">EXTCODESIZE</code>{" "}
+            check before every interface call. Hub precompiles expose 0 bytes of EVM code — PolkaVault uses
+            low-level{" "}
+            <code className="text-pink-400 bg-pink-500/10 px-1.5 py-0.5 rounded text-xs font-bold">.call()</code>{" "}
+            to bypass this.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {items.map((p) => {
+            const c = cfg[p.color];
+            return (
+              <div key={p.name} className={clsx(
+                "rounded-2xl glass border p-6 transition-all duration-300 shadow-lg group cursor-default",
+                c.border
+              )}>
+                <div className="flex items-center justify-between mb-5">
+                  <span className={clsx("text-xs font-black px-3 py-1 rounded-xl border", c.badge)}>{p.name}</span>
+                  <code className="text-[10px] text-gray-600 font-mono">{p.short}</code>
+                </div>
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {p.fns.map((fn) => (
+                    <span key={fn} className="text-[10px] px-2 py-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-gray-400 font-mono">
+                      {fn}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <Cpu className="w-3 h-3 text-gray-600 mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-gray-600 leading-relaxed">{p.note}</p>
+                </div>
+                <code className="text-[9px] text-gray-700 font-mono mt-3 block break-all">{p.full}</code>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Footer ──────────────────────────────────────────────────────────────────
+
+function Footer() {
+  return (
+    <footer className="border-t border-white/[0.05] py-12 px-4">
+      <div className="max-w-5xl mx-auto">
+        {/* Top row */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-pink-800 flex items-center justify-center shadow-lg shadow-pink-500/20">
+              <Shield className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-black tracking-tight text-lg">PolkaVault</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <a href="https://blockscout-testnet.polkadot.io/address/0x64D3EfbAde442779c68972D5079861Bcf16722E6"
+              target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors">
+              <ExternalLink className="w-3.5 h-3.5" />
+              Explorer
+            </a>
+            <a href="https://blockscout-testnet.polkadot.io/address/0x7d849b045d89a489df71c2e69968eb020a233974"
+              target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors">
+              <Cpu className="w-3.5 h-3.5" />
+              PVM Contract
+            </a>
+          </div>
+        </div>
+
+        {/* Contract addresses */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <div className="rounded-xl bg-white/[0.02] border border-white/[0.05] p-4">
+            <p className="text-[10px] text-gray-600 font-bold uppercase tracking-wider mb-1">PolkaVault (EVM)</p>
+            <div className="flex items-center gap-2">
+              <code className="text-xs text-gray-400 font-mono">0x64D3EfbAde442779c68972D5079861Bcf16722E6</code>
+              <CopyButton text="0x64D3EfbAde442779c68972D5079861Bcf16722E6" />
+            </div>
+          </div>
+          <div className="rounded-xl bg-white/[0.02] border border-white/[0.05] p-4">
+            <p className="text-[10px] text-gray-600 font-bold uppercase tracking-wider mb-1">YieldOptimizer (Rust PVM)</p>
+            <div className="flex items-center gap-2">
+              <code className="text-xs text-gray-400 font-mono">0x7d849b045d89a489df71c2e69968eb020a233974</code>
+              <CopyButton text="0x7d849b045d89a489df71c2e69968eb020a233974" />
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-white/[0.03]">
+          <p className="text-[11px] text-gray-700">
+            Built for Polkadot Hackathon 2025 · Track 2: PVM Smart Contracts
+          </p>
+          <p className="text-[11px] text-gray-700">
+            Chain ID 420420417 · Polkadot Hub Testnet
+          </p>
+        </div>
+      </div>
+    </footer>
   );
 }
 
@@ -1137,16 +1408,7 @@ export default function Home() {
         <HowItWorks />
         <CrossVMSection />
         <PrecompileInfo />
-        <footer className="border-t border-white/[0.05] py-8 text-center">
-          <p className="text-xs text-gray-700">
-            PolkaVault · Native Liquid Staking on Polkadot Hub ·{" "}
-            <a href="https://blockscout-testnet.polkadot.io/address/0x64D3EfbAde442779c68972D5079861Bcf16722E6"
-              target="_blank" rel="noopener noreferrer" className="hover:text-gray-500 transition-colors">
-              0x64D3…22E6
-            </a>
-          </p>
-          <p className="text-[11px] text-gray-800 mt-1">Chain ID 420420417 · Polkadot Hub Testnet</p>
-        </footer>
+        <Footer />
       </main>
     </>
   );
