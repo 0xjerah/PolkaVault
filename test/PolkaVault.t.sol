@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import {PolkaVault} from "../src/PolkaVault.sol";
 import {MockStaking} from "./mocks/MockStaking.sol";
 import {MockXCM} from "./mocks/MockXCM.sol";
+import {MockYieldOptimizer} from "./mocks/MockYieldOptimizer.sol";
 
 contract PolkaVaultTest is Test {
     PolkaVault vault;
@@ -514,5 +515,48 @@ contract PolkaVaultTest is Test {
         vault.compound{value: 5 * ONE_DOT}();
 
         assertEq(vault.lastCompoundTime(), t);
+    }
+
+    // ============================================================
+    //                    CROSS-VM YIELD OPTIMIZER
+    // ============================================================
+
+    function test_crossVM_apyBps_matches_solidity_fallback() public {
+        // Deploy mock YieldOptimizer and wire it up
+        MockYieldOptimizer mockOptimizer = new MockYieldOptimizer();
+        vault.setYieldOptimizer(address(mockOptimizer));
+
+        vm.prank(alice);
+        vault.deposit{value: 100 * ONE_DOT}();
+
+        vault.compound{value: 10 * ONE_DOT}();
+        vm.warp(block.timestamp + 365 days);
+        vault.compound{value: 11 * ONE_DOT}();
+
+        // Cross-VM path should give same 10% APY = 1000 bps
+        assertEq(vault.lastApyBps(), 1000);
+    }
+
+    function test_crossVM_can_be_disabled() public {
+        MockYieldOptimizer mockOptimizer = new MockYieldOptimizer();
+        vault.setYieldOptimizer(address(mockOptimizer));
+
+        // Disable by setting to address(0) — falls back to Solidity math
+        vault.setYieldOptimizer(address(0));
+        assertEq(vault.yieldOptimizer(), address(0));
+
+        vm.prank(alice);
+        vault.deposit{value: 100 * ONE_DOT}();
+        vault.compound{value: 10 * ONE_DOT}();
+        vm.warp(block.timestamp + 365 days);
+        vault.compound{value: 11 * ONE_DOT}();
+
+        assertEq(vault.lastApyBps(), 1000); // still works via fallback
+    }
+
+    function test_setYieldOptimizer_reverts_non_owner() public {
+        vm.prank(alice);
+        vm.expectRevert(PolkaVault.Unauthorized.selector);
+        vault.setYieldOptimizer(makeAddr("attacker"));
     }
 }
