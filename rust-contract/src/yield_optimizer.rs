@@ -52,7 +52,6 @@ extern "C" fn call() {
     // Guard: return 0 if inputs are invalid or no growth
     if elapsed == 0 || prev_rate == 0 || new_rate <= prev_rate {
         api::return_value(ReturnFlags::empty(), &output);
-        return;
     }
 
     // apyBps = (newRate - prevRate) * BPS * SECONDS_PER_YEAR / (prevRate * elapsed)

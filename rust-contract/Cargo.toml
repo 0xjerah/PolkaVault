@@ -9,12 +9,11 @@ name = "yield-optimizer"
 path = "src/yield_optimizer.rs"
 
 [dependencies]
-polkavm-derive = "0.25.0"
+polkavm-derive = "0.27.0"
 
 [dependencies.uapi]
 package = "pallet-revive-uapi"
-git = "https://github.com/paritytech/polkadot-sdk.git"
-rev = "187cddde3799b5761c8036aaf137b93ba09fa526"
+version = "0.7.0"
 default-features = false
 features = ["unstable-hostfn"]
 

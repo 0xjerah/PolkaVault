@@ -24,6 +24,13 @@ contract DeployPolkaVault is Script {
         vault.setKeeperFee(50);
         console.log("Keeper fee set to 0.5% (50 bps)");
 
+        // Wire Rust PVM YieldOptimizer (deploy separately, then set address here)
+        // address yieldOpt = vm.envOr("YIELD_OPTIMIZER", address(0));
+        // if (yieldOpt != address(0)) {
+        //     vault.setYieldOptimizer(yieldOpt);
+        //     console.log("YieldOptimizer (Rust PVM) set to:", yieldOpt);
+        // }
+
         vm.stopBroadcast();
     }
 }
