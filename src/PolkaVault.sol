@@ -5,6 +5,7 @@ import {IStaking} from "./interfaces/IStaking.sol";
 import {IBalances} from "./interfaces/IBalances.sol";
 import {IAssets} from "./interfaces/IAssets.sol";
 import {IXCM} from "./interfaces/IXCM.sol";
+import {IYieldOptimizer} from "./interfaces/IYieldOptimizer.sol";
 import {ScaleCodec} from "./libraries/ScaleCodec.sol";
 
 /// @title PolkaVault — Native Liquid Staking Protocol for Polkadot Hub
@@ -77,6 +78,9 @@ contract PolkaVault {
 
     /// @notice Exchange rate recorded after the most recent compound() (baseline for next APY calc)
     uint256 public lastCompoundRate;
+
+    /// @notice Address of the Rust PVM YieldOptimizer contract (cross-VM APY computation)
+    address public yieldOptimizer;
 
     address public owner;
 
@@ -317,8 +321,16 @@ contract PolkaVault {
         if (lastCompoundTime > 0 && lastCompoundRate > 0 && newRate > lastCompoundRate) {
             uint256 elapsed = block.timestamp - lastCompoundTime;
             if (elapsed > 0) {
-                uint256 growth = ((newRate - lastCompoundRate) * PRECISION) / lastCompoundRate;
-                lastApyBps = (growth * 365 days * 10_000) / (elapsed * PRECISION);
+                if (yieldOptimizer != address(0)) {
+                    // Cross-VM call: Solidity (EVM) → Rust (PolkaVM) via pallet-revive
+                    lastApyBps = IYieldOptimizer(yieldOptimizer).computeApy(
+                        lastCompoundRate, newRate, elapsed
+                    );
+                } else {
+                    // Fallback: compute in Solidity (used when PVM contract not yet set)
+                    uint256 growth = ((newRate - lastCompoundRate) * PRECISION) / lastCompoundRate;
+                    lastApyBps = (growth * 365 days * 10_000) / (elapsed * PRECISION);
+                }
             }
         }
         lastCompoundRate = newRate;
@@ -509,6 +521,13 @@ contract PolkaVault {
         require(bps <= 500, "fee exceeds max");
         keeperFeeBps = bps;
         emit KeeperFeeUpdated(bps);
+    }
+
+    /// @notice Set the Rust PVM YieldOptimizer contract address (cross-VM APY computation)
+    /// @dev Once set, compound() delegates APY math to the Rust PolkaVM contract.
+    ///      Set to address(0) to revert to Solidity-native computation.
+    function setYieldOptimizer(address optimizer) external onlyOwner {
+        yieldOptimizer = optimizer;
     }
 
     /// @notice Set unbonding period (use low value on testnet for demo)
