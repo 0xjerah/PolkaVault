@@ -256,6 +256,7 @@ function Hero() {
         <Chip>No Off-chain Relayer</Chip>
         <Chip>XCM V5 InitiateTeleport</Chip>
         <Chip>Substrate Staking via Precompile</Chip>
+        <Chip>Cross-VM: Solidity + Rust PVM</Chip>
       </div>
 
       {/* APY highlight */}
@@ -641,7 +642,11 @@ function CompoundPanel({ onSuccess }: { onSuccess: () => void }) {
     address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI, functionName: "lastCompoundTime",
     query: { refetchInterval: 30_000 },
   });
+  const { data: yieldOptAddr } = useReadContract({
+    address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI, functionName: "yieldOptimizer",
+  });
   if (isSuccess) { onSuccess(); reset(); }
+  const pvmActive = yieldOptAddr && yieldOptAddr !== "0x0000000000000000000000000000000000000000";
 
   const feeBps = keeperFeeBps as bigint | undefined;
   const realApy = fmtApy(apyBps as bigint | undefined);
@@ -668,12 +673,20 @@ function CompoundPanel({ onSuccess }: { onSuccess: () => void }) {
           <p className="text-[10px] text-gray-600 mt-1">PAS / stDOT</p>
         </div>
         <div className="rounded-xl bg-[#0e0c06] border border-emerald-500/15 p-3">
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Realized APY</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider">Realized APY</p>
+            {pvmActive && (
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-500/30">
+                <Cpu className="w-2.5 h-2.5 text-fuchsia-400" />
+                <span className="text-[9px] font-black text-fuchsia-400 uppercase tracking-wider">PVM</span>
+              </span>
+            )}
+          </div>
           <p className="font-black text-xl font-mono text-emerald-400 leading-none">
             {realApy ?? "—"}
           </p>
           <p className="text-[10px] text-gray-600 mt-1">
-            {lastCompound ? `last: ${lastCompound}` : "awaiting compound"}
+            {pvmActive ? "computed by Rust PolkaVM" : lastCompound ? `last: ${lastCompound}` : "awaiting compound"}
           </p>
         </div>
       </div>
@@ -1042,6 +1055,74 @@ function PrecompileInfo() {
   );
 }
 
+// ─── Cross-VM Architecture ────────────────────────────────────────────────────
+
+function CrossVMSection() {
+  const { data: yieldOptAddr } = useReadContract({
+    address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI, functionName: "yieldOptimizer",
+  });
+  const pvmActive = yieldOptAddr && yieldOptAddr !== "0x0000000000000000000000000000000000000000";
+
+  const steps = [
+    { label: "Solidity", desc: "compound() called", icon: Zap, color: "text-yellow-400", bg: "bg-yellow-500/10" },
+    { label: "pallet-revive", desc: "Routes cross-VM", icon: ArrowRightLeft, color: "text-blue-400", bg: "bg-blue-500/10" },
+    { label: "Rust PVM", desc: "computeApy()", icon: Cpu, color: "text-fuchsia-400", bg: "bg-fuchsia-500/10" },
+    { label: "Result", desc: "APY on-chain", icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+  ];
+
+  return (
+    <section className="max-w-5xl mx-auto px-4 pb-16 border-t border-white/[0.05] pt-16">
+      <div className="text-center mb-8">
+        <p className="text-xs text-fuchsia-400 font-black tracking-widest uppercase mb-2">Track 2 · PVM Smart Contracts</p>
+        <h2 className="text-3xl font-black mb-3">Cross-VM Architecture</h2>
+        <p className="text-gray-500 text-sm max-w-xl mx-auto leading-relaxed">
+          PolkaVault delegates APY computation to a{" "}
+          <span className="text-fuchsia-400 font-bold">Rust PolkaVM contract</span>{" "}
+          via pallet-revive&apos;s transparent VM routing. Solidity (EVM) calls Rust (RISC-V) natively on-chain.
+        </p>
+      </div>
+
+      {/* Flow diagram */}
+      <div className="flex items-center justify-center gap-2 mb-8 flex-wrap">
+        {steps.map((s, i) => (
+          <div key={s.label} className="flex items-center gap-2">
+            <div className="rounded-2xl bg-[#0d0d18] border border-white/[0.06] p-4 text-center min-w-[120px]">
+              <div className={clsx("w-8 h-8 rounded-xl mx-auto mb-2 flex items-center justify-center", s.bg)}>
+                <s.icon className={clsx("w-4 h-4", s.color)} />
+              </div>
+              <p className={clsx("text-xs font-black", s.color)}>{s.label}</p>
+              <p className="text-[10px] text-gray-600 mt-0.5">{s.desc}</p>
+            </div>
+            {i < steps.length - 1 && <ChevronRight className="w-4 h-4 text-gray-700 shrink-0" />}
+          </div>
+        ))}
+      </div>
+
+      {/* Status card */}
+      <div className={clsx(
+        "max-w-md mx-auto rounded-2xl border p-5 text-center",
+        pvmActive ? "bg-fuchsia-950/20 border-fuchsia-500/20" : "bg-[#0d0d18] border-white/[0.06]"
+      )}>
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <div className={clsx(
+            "w-2 h-2 rounded-full",
+            pvmActive ? "bg-fuchsia-400 shadow-[0_0_8px_rgba(217,70,239,0.5)]" : "bg-gray-600"
+          )} />
+          <p className={clsx("text-sm font-black", pvmActive ? "text-fuchsia-400" : "text-gray-500")}>
+            {pvmActive ? "Rust PVM Active" : "PVM Not Connected"}
+          </p>
+        </div>
+        <p className="text-[11px] text-gray-600">
+          {pvmActive
+            ? `YieldOptimizer deployed at ${(yieldOptAddr as string).slice(0, 10)}…${(yieldOptAddr as string).slice(-6)}`
+            : "APY computed in Solidity fallback mode — set yieldOptimizer address to enable cross-VM"
+          }
+        </p>
+      </div>
+    </section>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -1054,6 +1135,7 @@ export default function Home() {
         <ValidatorAdmin />
         <Dashboard />
         <HowItWorks />
+        <CrossVMSection />
         <PrecompileInfo />
         <footer className="border-t border-white/[0.05] py-8 text-center">
           <p className="text-xs text-gray-700">

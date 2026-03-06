@@ -107,6 +107,20 @@ export const POLKAVAULT_ABI = [
     stateMutability: "nonpayable",
   },
   {
+    type: "function",
+    name: "yieldOptimizer",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "setYieldOptimizer",
+    inputs: [{ name: "optimizer", type: "address" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
     type: "event",
     name: "ValidatorsNominated",
     inputs: [{ name: "targets", type: "bytes32[]", indexed: false }],
