@@ -1140,9 +1140,9 @@ export default function Home() {
         <footer className="border-t border-white/[0.05] py-8 text-center">
           <p className="text-xs text-gray-700">
             PolkaVault · Native Liquid Staking on Polkadot Hub ·{" "}
-            <a href="https://blockscout-testnet.polkadot.io/address/0xbcd7bFCd5224a18aB306923E145aa7e8ba4f5e04"
+            <a href="https://blockscout-testnet.polkadot.io/address/0x64D3EfbAde442779c68972D5079861Bcf16722E6"
               target="_blank" rel="noopener noreferrer" className="hover:text-gray-500 transition-colors">
-              0xbcd7…5e04
+              0x64D3…22E6
             </a>
           </p>
           <p className="text-[11px] text-gray-800 mt-1">Chain ID 420420417 · Polkadot Hub Testnet</p>

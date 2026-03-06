@@ -1,5 +1,5 @@
 // Deployed to Polkadot Hub Testnet (chain 420420417)
-export const POLKAVAULT_ADDRESS = "0xbcd7bFCd5224a18aB306923E145aa7e8ba4f5e04" as const;
+export const POLKAVAULT_ADDRESS = "0x64D3EfbAde442779c68972D5079861Bcf16722E6" as const;
 
 export const POLKAVAULT_ABI = [
   // ── Write ────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
-   0.508290052s  INFO prepare_target{force=false package_id=yield-optimizer v0.1.0 (/Users/mac/PolkaVault/rust-contract) target="yield-optimizer"}: cargo::core::compiler::fingerprint: fingerprint error for yield-optimizer v0.1.0 (/Users/mac/PolkaVault/rust-contract)/Check { test: false }/TargetInner { name: "yield-optimizer", doc: true, ..: with_path("/Users/mac/PolkaVault/rust-contract/src/yield_optimizer.rs", Edition2021) }
-   0.508343732s  INFO prepare_target{force=false package_id=yield-optimizer v0.1.0 (/Users/mac/PolkaVault/rust-contract) target="yield-optimizer"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/mac/PolkaVault/rust-contract/target/riscv64emac-unknown-none-polkavm/debug/.fingerprint/yield-optimizer-899f4a6fa601877d/bin-yield-optimizer`
+   0.946462521s  INFO prepare_target{force=false package_id=yield-optimizer v0.1.0 (/Users/mac/PolkaVault/rust-contract) target="yield-optimizer"}: cargo::core::compiler::fingerprint: fingerprint error for yield-optimizer v0.1.0 (/Users/mac/PolkaVault/rust-contract)/Check { test: false }/TargetInner { name: "yield-optimizer", doc: true, ..: with_path("/Users/mac/PolkaVault/rust-contract/src/yield_optimizer.rs", Edition2021) }
+   0.946500157s  INFO prepare_target{force=false package_id=yield-optimizer v0.1.0 (/Users/mac/PolkaVault/rust-contract) target="yield-optimizer"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/mac/PolkaVault/rust-contract/target/riscv64emac-unknown-none-polkavm/debug/.fingerprint/yield-optimizer-a7b4e9c07bb132ad/bin-yield-optimizer`
 
 Caused by:
     No such file or directory (os error 2)
@@ -24,8 +24,8 @@ Stack backtrace:
   16: std::rt::lang_start_internal
   17: _main
   18: <unknown>
-   0.522188577s  INFO prepare_target{force=false package_id=pallet-revive-uapi v0.7.0 target="pallet_revive_uapi"}: cargo::core::compiler::fingerprint: fingerprint error for pallet-revive-uapi v0.7.0/Check { test: false }/TargetInner { ..: lib_target("pallet_revive_uapi", ["lib"], "/Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pallet-revive-uapi-0.7.0/src/lib.rs", Edition2021) }
-   0.522219572s  INFO prepare_target{force=false package_id=pallet-revive-uapi v0.7.0 target="pallet_revive_uapi"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/mac/PolkaVault/rust-contract/target/riscv64emac-unknown-none-polkavm/debug/.fingerprint/pallet-revive-uapi-bf83934d2f45c6cd/lib-pallet_revive_uapi`
+   0.954354674s  INFO prepare_target{force=false package_id=pallet-revive-uapi v0.1.0 (https://github.com/paritytech/polkadot-sdk.git?rev=187cddde3799b5761c8036aaf137b93ba09fa526#187cddde) target="pallet_revive_uapi"}: cargo::core::compiler::fingerprint: fingerprint error for pallet-revive-uapi v0.1.0 (https://github.com/paritytech/polkadot-sdk.git?rev=187cddde3799b5761c8036aaf137b93ba09fa526#187cddde)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("pallet_revive_uapi", ["lib"], "/Users/mac/.cargo/git/checkouts/polkadot-sdk-dee0edd6eefa0594/187cddd/substrate/frame/revive/uapi/src/lib.rs", Edition2021) }
+   0.954374660s  INFO prepare_target{force=false package_id=pallet-revive-uapi v0.1.0 (https://github.com/paritytech/polkadot-sdk.git?rev=187cddde3799b5761c8036aaf137b93ba09fa526#187cddde) target="pallet_revive_uapi"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/mac/PolkaVault/rust-contract/target/riscv64emac-unknown-none-polkavm/debug/.fingerprint/pallet-revive-uapi-7f155155017d1342/lib-pallet_revive_uapi`
 
 Caused by:
     No such file or directory (os error 2)
@@ -51,8 +51,8 @@ Stack backtrace:
   17: std::rt::lang_start_internal
   18: _main
   19: <unknown>
-   0.522967208s  INFO prepare_target{force=false package_id=bitflags v1.3.2 target="bitflags"}: cargo::core::compiler::fingerprint: fingerprint error for bitflags v1.3.2/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("bitflags", ["lib"], "/Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bitflags-1.3.2/src/lib.rs", Edition2018) }
-   0.522985295s  INFO prepare_target{force=false package_id=bitflags v1.3.2 target="bitflags"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/mac/PolkaVault/rust-contract/target/riscv64emac-unknown-none-polkavm/debug/.fingerprint/bitflags-d3d1946b683a61bd/lib-bitflags`
+   0.954650420s  INFO prepare_target{force=false package_id=bitflags v1.3.2 target="bitflags"}: cargo::core::compiler::fingerprint: fingerprint error for bitflags v1.3.2/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("bitflags", ["lib"], "/Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bitflags-1.3.2/src/lib.rs", Edition2018) }
+   0.954661128s  INFO prepare_target{force=false package_id=bitflags v1.3.2 target="bitflags"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/mac/PolkaVault/rust-contract/target/riscv64emac-unknown-none-polkavm/debug/.fingerprint/bitflags-d3d1946b683a61bd/lib-bitflags`
 
 Caused by:
     No such file or directory (os error 2)
@@ -79,8 +79,8 @@ Stack backtrace:
   18: std::rt::lang_start_internal
   19: _main
   20: <unknown>
-   0.529243085s  INFO prepare_target{force=false package_id=polkavm-derive v0.27.0 target="polkavm_derive"}: cargo::core::compiler::fingerprint: fingerprint error for polkavm-derive v0.27.0/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("polkavm_derive", ["lib"], "/Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/polkavm-derive-0.27.0/src/lib.rs", Edition2021) }
-   0.529269821s  INFO prepare_target{force=false package_id=polkavm-derive v0.27.0 target="polkavm_derive"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/mac/PolkaVault/rust-contract/target/riscv64emac-unknown-none-polkavm/debug/.fingerprint/polkavm-derive-f1e0d0d2cfaceda2/lib-polkavm_derive`
+   0.956414029s  INFO prepare_target{force=false package_id=polkavm-derive v0.21.0 target="polkavm_derive"}: cargo::core::compiler::fingerprint: fingerprint error for polkavm-derive v0.21.0/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("polkavm_derive", ["lib"], "/Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/polkavm-derive-0.21.0/src/lib.rs", Edition2021) }
+   0.956435646s  INFO prepare_target{force=false package_id=polkavm-derive v0.21.0 target="polkavm_derive"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/mac/PolkaVault/rust-contract/target/riscv64emac-unknown-none-polkavm/debug/.fingerprint/polkavm-derive-1c5cb5cf75498694/lib-polkavm_derive`
 
 Caused by:
     No such file or directory (os error 2)
@@ -107,8 +107,35 @@ Stack backtrace:
   18: std::rt::lang_start_internal
   19: _main
   20: <unknown>
-   0.530946101s  INFO prepare_target{force=false package_id=yield-optimizer v0.1.0 (/Users/mac/PolkaVault/rust-contract) target="yield-optimizer"}: cargo::core::compiler::fingerprint: fingerprint error for yield-optimizer v0.1.0 (/Users/mac/PolkaVault/rust-contract)/Check { test: true }/TargetInner { name: "yield-optimizer", doc: true, ..: with_path("/Users/mac/PolkaVault/rust-contract/src/yield_optimizer.rs", Edition2021) }
-   0.530971523s  INFO prepare_target{force=false package_id=yield-optimizer v0.1.0 (/Users/mac/PolkaVault/rust-contract) target="yield-optimizer"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/mac/PolkaVault/rust-contract/target/riscv64emac-unknown-none-polkavm/debug/.fingerprint/yield-optimizer-79006f9a0bd46ba8/test-bin-yield-optimizer`
+   0.957105580s  INFO prepare_target{force=false package_id=polkavm-derive v0.25.0 target="polkavm_derive"}: cargo::core::compiler::fingerprint: fingerprint error for polkavm-derive v0.25.0/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("polkavm_derive", ["lib"], "/Users/mac/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/polkavm-derive-0.25.0/src/lib.rs", Edition2021) }
+   0.957122743s  INFO prepare_target{force=false package_id=polkavm-derive v0.25.0 target="polkavm_derive"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/mac/PolkaVault/rust-contract/target/riscv64emac-unknown-none-polkavm/debug/.fingerprint/polkavm-derive-16e12c497f809a81/lib-polkavm_derive`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::prepare_target
+   5: cargo::core::compiler::compile
+   6: cargo::core::compiler::compile
+   7: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   8: cargo::ops::cargo_compile::compile_ws
+   9: cargo::ops::cargo_compile::compile_with_exec
+  10: cargo::ops::cargo_compile::compile
+  11: cargo::commands::check::exec
+  12: <cargo::cli::Exec>::exec
+  13: cargo::cli::main
+  14: cargo::main
+  15: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16: std::rt::lang_start::<()>::{closure#0}
+  17: std::rt::lang_start_internal
+  18: _main
+  19: <unknown>
+   0.957774309s  INFO prepare_target{force=false package_id=yield-optimizer v0.1.0 (/Users/mac/PolkaVault/rust-contract) target="yield-optimizer"}: cargo::core::compiler::fingerprint: fingerprint error for yield-optimizer v0.1.0 (/Users/mac/PolkaVault/rust-contract)/Check { test: true }/TargetInner { name: "yield-optimizer", doc: true, ..: with_path("/Users/mac/PolkaVault/rust-contract/src/yield_optimizer.rs", Edition2021) }
+   0.957786176s  INFO prepare_target{force=false package_id=yield-optimizer v0.1.0 (/Users/mac/PolkaVault/rust-contract) target="yield-optimizer"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/mac/PolkaVault/rust-contract/target/riscv64emac-unknown-none-polkavm/debug/.fingerprint/yield-optimizer-90dd80d9acafdb3a/test-bin-yield-optimizer`
 
 Caused by:
     No such file or directory (os error 2)
@@ -134,7 +161,9 @@ Stack backtrace:
   17: _main
   18: <unknown>
     Checking bitflags v1.3.2
-    Checking polkavm-derive v0.27.0
-error: could not compile `bitflags` (lib) due to 1 previous error
+    Checking polkavm-derive v0.21.0
+    Checking polkavm-derive v0.25.0
+error: could not compile `polkavm-derive` (lib) due to 1 previous error
 warning: build failed, waiting for other jobs to finish...
+error: could not compile `bitflags` (lib) due to 1 previous error
 error: could not compile `polkavm-derive` (lib) due to 1 previous error
