@@ -71,17 +71,17 @@
 **Action:**
 1. Scroll to the Compound panel
 2. Show the current exchange rate and APY
-3. Enter a reward amount (simulating accrued rewards)
-4. Click "Compound"
+3. Point out: "No amount input — the contract reads accrued rewards automatically"
+4. Click "Compound Rewards"
 5. Confirm in MetaMask
 6. Show exchange rate increase + APY update
 
 **Show:** Cross-VM flow diagram lights up: Solidity → pallet-revive → Rust PVM → Result
 
 **Say:**
-> "This is the core innovation. When compound is called, the contract does three things:
-> First, it takes 0.5% as a keeper fee — anyone can call this, creating a permissionless incentive to keep the protocol compounding.
-> Second, it calls bondExtra via the Staking precompile to add rewards to the bonded stake. This increases the exchange rate for ALL stDOT holders — no action required on their part.
+> "This is the core innovation. Notice there's no amount to enter — the vault uses payee=Stash, so staking rewards accrue directly to the contract's balance. When compound is called, the contract does three things:
+> First, it reads address(this).balance — the accrued staking rewards sitting in the contract.
+> Second, it takes 0.5% as a keeper fee and bonds the rest via bondExtra on the Staking precompile. This increases the exchange rate for ALL stDOT holders — no action required on their part.
 > Third — and this is the Track 2 cross-VM demo — it calls our Rust YieldOptimizer contract deployed on PolkaVM. The Solidity EVM contract calls a Rust RISC-V contract through pallet-revive's transparent VM routing. The Rust contract computes the annualized APY from exchange rate growth and returns it on-chain.
 > This is real cross-VM interoperability — not a mock, not a simulation. Two different virtual machines, one seamless call."
 

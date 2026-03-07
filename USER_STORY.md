@@ -30,13 +30,13 @@ She's now earning staking yield. She didn't nominate validators. She didn't lock
 
 ### Rewards compound automatically
 
-A few eras pass. Staking rewards accrue to the vault. **Bob**, a keeper, sees an opportunity — PolkaVault pays a **0.5% keeper fee** to whoever calls `compound()`. Bob calls it with the accrued rewards.
+A few eras pass. Because the vault bonds with `payee=Stash`, staking rewards flow directly into the contract's free balance — no oracle, no off-chain bot needed to detect them. **Bob**, a keeper, sees an opportunity — PolkaVault pays a **0.5% keeper fee** to whoever calls `compound()`. Bob calls it — no PAS to send, just a simple transaction.
 
 Three things happen in a single transaction:
 
-1. **Bond extra** — rewards are added to the vault's bonded stake via the Staking precompile
+1. **Auto-harvest** — the contract reads `address(this).balance` to find all accrued staking rewards, then bonds them via `bondExtra()` on the Staking precompile
 2. **Cross-VM APY computation** — the contract calls a **Rust contract on PolkaVM** to compute the annualized APY from exchange rate growth. Solidity calling Rust, on-chain, through pallet-revive's transparent VM routing.
-3. **Keeper fee** — Bob receives 0.5% of the compounded rewards for his service
+3. **Keeper fee** — Bob receives 0.5% of the compounded rewards for his service, paid instantly from the accrued balance
 
 The exchange rate updates: **1 stDOT = 1.054000 PAS**. Alice's 100 stDOT is now worth 105.4 PAS. She didn't do anything.
 
@@ -62,7 +62,7 @@ PolkaVault doesn't wrap tokens. It doesn't bridge assets. It calls Polkadot Hub'
 
 ### It's trustless
 
-No oracle reports the exchange rate — it's computed on-chain from `totalStaked / totalSupply`. No off-chain bot is required — anyone can call `compound()` and earn a keeper fee. No admin can steal funds — the vault is a smart contract with transparent logic.
+No oracle reports the exchange rate — it's computed on-chain from `totalStaked / totalSupply`. No off-chain bot is required to feed rewards — staking rewards accrue to the contract automatically (`payee=Stash`), and anyone can call `compound()` to bond them and earn a keeper fee. No admin can steal funds — the vault is a smart contract with transparent logic.
 
 ### It's cross-VM
 
@@ -82,8 +82,8 @@ This is what makes PolkaVault a Track 2 project, not Track 1. The APY computatio
 | Capability | How PolkaVault Does It |
 |---|---|
 | Staking | Direct calls to Staking precompile (`0x0804`) — `bond()`, `bondExtra()`, `unbond()`, `withdrawUnbonded()`, `nominate()` |
-| Yield | Exchange rate grows on `compound()` — no oracle, no external feed |
-| Keeper incentive | 0.5% fee paid to `compound()` caller — permissionless, autonomous protocol |
+| Yield | Rewards accrue to contract (`payee=Stash`); `compound()` bonds them — no oracle, no external feed |
+| Keeper incentive | 0.5% fee paid to `compound()` caller — no `msg.value`, fully permissionless |
 | APY computation | Cross-VM call to Rust YieldOptimizer on PolkaVM — real RISC-V contract |
 | Cross-chain | XCM V5 `InitiateTeleport` via XCM precompile (`0x0A0000`) — SCALE-encoded in Solidity |
 | Precompile compatibility | Low-level `.call()` to bypass Solidity 0.8's `EXTCODESIZE` check on zero-code precompiles |

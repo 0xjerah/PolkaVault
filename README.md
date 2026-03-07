@@ -22,8 +22,8 @@ PolkaVault is a **native liquid staking protocol** built entirely on Polkadot Hu
 ### Key Features
 
 - **Liquid Staking** — deposit PAS, receive stDOT, earn yield passively
-- **Auto-Compounding** — `compound()` increases exchange rate for all holders
-- **Keeper Incentives** — 0.5% fee paid to whoever calls `compound()` (autonomous protocol)
+- **Auto-Harvest Compounding** — staking rewards accrue to contract (payee=Stash); `compound()` bonds them, increasing exchange rate for all holders
+- **Keeper Incentives** — 0.5% fee paid to whoever calls `compound()` — no `msg.value` needed, fully permissionless
 - **Cross-Chain Teleport** — send PAS to Relay Chain via XCM V5 `InitiateTeleport`
 - **On-Chain APY** — realized yield computed from exchange rate growth between compounds
 - **Cross-VM Architecture** — APY computation delegated to a **Rust PolkaVM contract** via pallet-revive
@@ -93,8 +93,8 @@ User deposits PAS
       ▼
 PolkaVault.deposit()
       │
-      ├─► Staking precompile (0x0804) — bond(value, payee)
-      │      PAS is bonded to the vault's stash account
+      ├─► Staking precompile (0x0804) — bond(value, payee=Stash)
+      │      PAS is bonded; rewards flow to contract balance
       │
       └─► Mint stDOT to user at current exchange rate
              rate = totalStaked / totalSupply
@@ -106,15 +106,19 @@ The stDOT/PAS exchange rate starts at 1:1 and only ever increases:
 
 ```
 Initial:   1 stDOT = 1.000000 PAS
-After era: compound() called with staking rewards
-           totalStaked += rewards (no new stDOT minted)
+After era: staking rewards accrue to contract (payee=Stash)
+           compound() bonds them → totalStaked increases (no new stDOT minted)
 New rate:  1 stDOT = 1.054000 PAS  ← all holders benefit automatically
 ```
 
-### Compound (with Keeper Fee + Cross-VM APY)
+### Compound (Auto-Harvest + Keeper Fee + Cross-VM APY)
 
 ```
-Anyone calls compound{value: rewards}()
+Staking rewards accrue to contract balance (payee=Stash)
+      │
+Anyone calls compound()       ← permissionless, no msg.value needed
+      │
+      ├─► Reads address(this).balance as accrued rewards
       │
       ├─► Split: 0.5% keeper fee + 99.5% rewards
       │
@@ -186,9 +190,10 @@ function requestWithdraw(uint256 shares) external
 // Claim PAS after unbonding period
 function claimWithdrawal(uint256 index) external
 
-// Compound rewards — increases exchange rate for all holders
-// Keeper earns 0.5% fee. APY computed via cross-VM Rust contract.
-function compound() external payable
+// Compound accrued staking rewards — increases exchange rate for all holders
+// Reads rewards from contract balance (payee=Stash). Keeper earns 0.5% fee.
+// APY computed via cross-VM Rust contract. No msg.value needed.
+function compound() external
 
 // Teleport PAS to Relay Chain via XCM V5
 function sendCrossChain(uint256 shares, bytes32 destAccount) external payable
