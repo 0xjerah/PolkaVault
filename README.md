@@ -3,6 +3,14 @@
 > **Polkadot Hackathon 2025 — Track 2: PVM Smart Contracts**
 > Categories: _Native Assets_ · _Accessing Native Functionality via Precompiles_ · _Cross-VM (EVM + PolkaVM)_
 
+<!-- ![PolkaVault Dashboard](./assets/screenshot.png) -->
+
+### TL;DR
+
+Deposit PAS → get stDOT → earn staking yield automatically → compound rewards via cross-VM Rust contract → send PAS cross-chain via XCM V5. All on-chain. No oracles. No bridges. **[Live on Polkadot Hub Testnet.](https://blockscout-testnet.polkadot.io/address/0x64D3EfbAde442779c68972D5079861Bcf16722E6)**
+
+<!-- **[Demo Video →](https://youtu.be/TODO)** -->
+
 ---
 
 ## What It Is
@@ -303,13 +311,16 @@ Open [http://localhost:3000](http://localhost:3000). Connect a wallet configured
 
 ### Frontend Features
 
-- **Vault Stats Strip** — TVL, exchange rate, stDOT supply, unique depositors
-- **Hero Section** — protocol overview with live APY from on-chain data
-- **Dashboard Tabs** — Deposit, Withdraw, XCM Send, Compound (4 panels)
-- **Compound Panel** — shows exchange rate, realized APY, keeper fee earnings, PVM badge
-- **Cross-VM Section** — visual flow diagram (Solidity → pallet-revive → Rust PVM → Result)
-- **Validator Admin** — owner-only panel to nominate validators
-- **Precompile Info** — technical details on each precompile used
+- **Live Rate Pill** — real-time exchange rate in the navbar, pulled from on-chain data
+- **Vault Stats Strip** — TVL, exchange rate, stDOT supply, depositor count
+- **Rate Hero Card** — large exchange rate display with animated glow + all-time gain stats
+- **Side-by-Side Deposit/Withdraw** — both panels visible simultaneously for faster UX
+- **Position Summary** — stDOT balance, PAS value, PAS earned, current rate at a glance
+- **Compound Panel** — exchange rate, realized APY, keeper fee earnings, PVM badge
+- **XCM Cross-Chain** — send PAS to Relay Chain with destination account input
+- **Cross-VM Flow Diagram** — interactive visual: Solidity → pallet-revive → Rust PVM → Result
+- **Precompile Info** — technical breakdown of each precompile with function badges
+- **Scrolling Ticker** — feature marquee with gradient fade edges
 
 ---
 
@@ -371,6 +382,12 @@ PolkaVault demonstrates **real cross-VM interoperability** on Polkadot Hub:
 - This is not a toy example — it's a production-relevant pattern where compute-heavy logic runs natively on PolkaVM while the user-facing contract remains in Solidity
 
 A plain EVM project (Track 1) would use standard ERC-20 tokens and OpenZeppelin contracts with no precompile or cross-VM interaction. PolkaVault is meaningless on any other EVM chain — it only works because Polkadot Hub exposes substrate-native precompiles and pallet-revive's cross-VM routing.
+
+---
+
+## Team
+
+Solo builder — contract development, Rust PVM contract, frontend, testing, deployment.
 
 ---
 

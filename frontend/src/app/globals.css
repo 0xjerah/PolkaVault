@@ -3,6 +3,17 @@
 :root {
   --background: #030712;
   --foreground: #f9fafb;
+  --bg:       #080809;
+  --surface:  #0D0D10;
+  --surface2: #12121A;
+  --border:   #1C1C28;
+  --border2:  #242432;
+  --pink:     #E6007A;
+  --cyan:     #00D4FF;
+  --green:    #00FF88;
+  --amber:    #FFB800;
+  --muted:    #52526A;
+  --text:     #E2E2EE;
 }
 
 @theme inline {
@@ -13,15 +24,16 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), 'DM Sans', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
 
 /* Smooth scroll */
@@ -39,30 +51,51 @@ html { scroll-behavior: smooth; }
 
 /* Polkadot dot-grid background */
 .dot-grid {
-  background-image: radial-gradient(rgba(230, 0, 122, 0.14) 1.5px, transparent 1.5px);
-  background-size: 28px 28px;
+  background-image: radial-gradient(rgba(230, 0, 122, 0.10) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 /* Remove number input arrows */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
+input:focus { outline: none; }
 
-/* Fade-in on scroll */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* Scrolling ticker */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s ease-out forwards;
+
+/* Gradient mesh overlay for premium cards */
+.mesh-gradient {
+  background-image:
+    radial-gradient(at 20% 30%, rgba(230, 0, 122, 0.06) 0%, transparent 50%),
+    radial-gradient(at 80% 70%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
 }
+
+/* Vault glow — unique gradient border pulse */
+@keyframes vaultGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(230,0,122,0.15), inset 0 0 20px rgba(230,0,122,0.03); }
+  50%      { box-shadow: 0 0 35px rgba(230,0,122,0.3), 0 0 60px rgba(139,92,246,0.1), inset 0 0 30px rgba(230,0,122,0.05); }
+}
+.vault-glow { animation: vaultGlow 4s ease-in-out infinite; }
 
 /* Pulse glow */
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 12px 2px rgba(230, 0, 122, 0.3); }
-  50%      { box-shadow: 0 0 24px 6px rgba(230, 0, 122, 0.5); }
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(230, 0, 122, 0.3); }
+  50%      { box-shadow: 0 0 16px 4px rgba(230, 0, 122, 0.5); }
 }
 .animate-pulse-glow { animation: pulseGlow 3s ease-in-out infinite; }
+
+/* Fade-in on scroll */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
 
 /* Gradient text shimmer */
 @keyframes shimmer {
@@ -77,36 +110,17 @@ input[type="number"] { -moz-appearance: textfield; }
 /* Floating animation */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-8px); }
+  50%      { transform: translateY(-6px); }
 }
 .animate-float { animation: float 4s ease-in-out infinite; }
 
-/* Number counter ticker */
-@keyframes countUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-count-up { animation: countUp 0.4s ease-out forwards; }
+/* Blinking for live indicators */
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.blink { animation: blink 1s step-end infinite; }
 
-/* Glass card effect */
+/* Glass card */
 .glass {
-  background: rgba(13, 13, 24, 0.7);
+  background: rgba(13, 13, 16, 0.8);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
-
-/* Gradient border glow on hover */
-.glow-border {
-  position: relative;
-}
-.glow-border::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(230,0,122,0.3), rgba(139,92,246,0.3), rgba(59,130,246,0.3));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: -1;
-}
-.glow-border:hover::before { opacity: 1; }
