@@ -36,7 +36,7 @@ export const POLKAVAULT_ABI = [
     name: "compound",
     inputs: [],
     outputs: [],
-    stateMutability: "payable",
+    stateMutability: "nonpayable",
   },
   {
     type: "function",

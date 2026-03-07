@@ -226,13 +226,15 @@ contract PolkaVault {
     /// @notice Deposit native DOT and receive stDOT at the current exchange rate
     /// @dev Bonds deposited DOT via Staking precompile.
     ///      First deposit calls bond(); all subsequent calls use bondExtra().
+    ///      payee=1 (Stash) so staking rewards flow to the contract's free balance
+    ///      and can be harvested permissionlessly via compound().
     function deposit() external payable {
         if (msg.value == 0) revert ZeroAmount();
 
         uint256 shares = sharesForDot(msg.value);
 
         if (!_bonded) {
-            _stakingBond(msg.value, 0); // payee=0 → Staked (rewards stay bonded)
+            _stakingBond(msg.value, 1); // payee=1 → Stash (rewards go to contract balance)
             _bonded = true;
         } else {
             _stakingBondExtra(msg.value);
@@ -301,17 +303,20 @@ contract PolkaVault {
     // ============================================================
 
     /// @notice Compound staking rewards — increases the stDOT exchange rate for all holders
-    /// @dev Caller provides reward amount as msg.value. Vault bonds it via bondExtra()
-    ///      which increases totalStaked without minting new stDOT → rate goes up.
+    /// @dev Reads accrued staking rewards from the contract's free balance (payee=Stash).
+    ///      Bonds rewards via bondExtra() which increases totalStaked without minting
+    ///      new stDOT → rate goes up for all holders.
     ///
     ///      Permissionless: anyone can call. Keeper earns keeperFeeBps of compounded rewards.
     ///      On-chain APY is computed from exchange rate growth between consecutive calls.
-    function compound() external payable {
-        if (msg.value == 0) revert ZeroAmount();
+    ///      Cross-VM: if yieldOptimizer is set, APY is computed by a Rust PolkaVM contract.
+    function compound() external {
+        uint256 available = address(this).balance;
+        if (available == 0) revert ZeroAmount();
 
         // Split: keeper incentive + rewards to bond
-        uint256 fee     = (msg.value * keeperFeeBps) / 10_000;
-        uint256 rewards = msg.value - fee;
+        uint256 fee     = (available * keeperFeeBps) / 10_000;
+        uint256 rewards = available - fee;
 
         _stakingBondExtra(rewards);
         totalStaked += rewards;

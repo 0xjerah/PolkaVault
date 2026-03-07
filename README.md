@@ -1,13 +1,13 @@
 # PolkaVault — Native Liquid Staking on Polkadot Hub
 
-> **Polkadot Hackathon 2025 — Track 2: PVM Smart Contracts**
+> **Polkadot OpenGuild Hackathon 2026 — Track 2: PVM Smart Contracts**
 > Categories: _Native Assets_ · _Accessing Native Functionality via Precompiles_ · _Cross-VM (EVM + PolkaVM)_
 
 <!-- ![PolkaVault Dashboard](./assets/screenshot.png) -->
 
 ### TL;DR
 
-Deposit PAS → get stDOT → earn staking yield automatically → compound rewards via cross-VM Rust contract → send PAS cross-chain via XCM V5. All on-chain. No oracles. No bridges. **[Live on Polkadot Hub Testnet.](https://blockscout-testnet.polkadot.io/address/0x64D3EfbAde442779c68972D5079861Bcf16722E6)**
+Deposit PAS(DOT) → get stDOT → earn staking yield automatically → compound rewards via cross-VM Rust contract → send PAS cross-chain via XCM V5. All on-chain. No oracles. No bridges. **[Live on Polkadot Hub Testnet.](https://blockscout-testnet.polkadot.io/address/0x64D3EfbAde442779c68972D5079861Bcf16722E6)**
 
 <!-- **[Demo Video →](https://youtu.be/TODO)** -->
 

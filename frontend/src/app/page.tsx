@@ -780,7 +780,6 @@ function CrossChainPanel({ onSuccess, stDotBal }: { onSuccess: () => void; stDot
 // ─── Compound ─────────────────────────────────────────────────────────────────
 
 function CompoundPanel({ onSuccess }: { onSuccess: () => void }) {
-  const [amount, setAmount] = useState("");
   const { writeContract, data: hash, isPending, reset } = useWriteContract();
   const { isSuccess, isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
   const { data: rate } = useReadContract({
@@ -802,9 +801,6 @@ function CompoundPanel({ onSuccess }: { onSuccess: () => void }) {
 
   const feeBps = keeperFeeBps as bigint | undefined;
   const realApy = fmtApy(apyBps as bigint | undefined);
-  const keeperEarn = feeBps && feeBps > 0n && amount && Number(amount) > 0
-    ? (Number(amount) * Number(feeBps) / 10_000).toFixed(6)
-    : null;
 
   return (
     <Card>
@@ -835,6 +831,18 @@ function CompoundPanel({ onSuccess }: { onSuccess: () => void }) {
           </div>
         </div>
 
+        {/* How it works */}
+        <div className="rounded bg-[var(--surface2)] border border-[var(--border)] px-3 py-2.5">
+          <p className="font-mono text-[11px] text-[var(--text)] font-medium mb-1">
+            Auto-Harvest from Staking Rewards
+          </p>
+          <p className="font-mono text-[9px] text-[var(--muted)] leading-relaxed">
+            Staking rewards accrue to the vault automatically (payee=Stash). Calling compound()
+            bonds all accrued rewards via bondExtra(), increasing the exchange rate for every
+            stDOT holder. No manual input needed.
+          </p>
+        </div>
+
         {/* Keeper fee */}
         {feeBps !== undefined && feeBps > 0n && (
           <div className="rounded bg-[rgba(0,255,136,0.04)] border border-[rgba(0,255,136,0.15)] px-3 py-2.5 flex items-center justify-between">
@@ -843,22 +851,18 @@ function CompoundPanel({ onSuccess }: { onSuccess: () => void }) {
                 Earn {Number(feeBps) / 100}% keeper reward
               </p>
               <p className="font-mono text-[9px] text-[var(--muted)] mt-0.5">
-                Paid instantly to your wallet
+                Paid instantly to your wallet from accrued rewards
               </p>
             </div>
-            {keeperEarn && (
-              <span className="font-mono text-[13px] text-[var(--green)] font-medium">+{keeperEarn} PAS</span>
-            )}
           </div>
         )}
 
-        <TokenInput value={amount} onChange={setAmount} token="PAS" />
         <TxButton
           onClick={() => writeContract({ address: POLKAVAULT_ADDRESS, abi: POLKAVAULT_ABI,
-            functionName: "compound", value: parseAmt(amount) })}
-          disabled={!amount || Number(amount) <= 0} isPending={isPending || isConfirming}
+            functionName: "compound" })}
+          disabled={false} isPending={isPending || isConfirming}
           isSuccess={isSuccess}
-          label={keeperEarn ? `Compound & Earn ${keeperEarn} PAS` : "Compound"} />
+          label="Compound Rewards" />
       </div>
     </Card>
   );

@@ -56,8 +56,9 @@ contract PolkaVaultTest is Test {
 
         uint256 rateBefore = vault.exchangeRate();
 
-        // Simulate 5 DOT rewards being compounded
-        vault.compound{value: 5 * ONE_DOT}();
+        // Simulate 5 DOT staking rewards arriving in contract balance (payee=Stash)
+        vm.deal(address(vault), 5 * ONE_DOT);
+        vault.compound();
 
         assertGt(vault.exchangeRate(), rateBefore);
         // totalStaked = 105, supply = 100 → rate = 1.05e18
@@ -80,8 +81,9 @@ contract PolkaVaultTest is Test {
         vm.prank(alice);
         vault.deposit{value: 100 * ONE_DOT}();
 
-        // Compound 100 DOT rewards → rate is now 2:1
-        vault.compound{value: 100 * ONE_DOT}();
+        // Simulate 100 DOT staking rewards → rate is now 2:1
+        vm.deal(address(vault), 100 * ONE_DOT);
+        vault.compound();
         assertEq(vault.exchangeRate(), 2e18);
 
         // Bob deposits 100 DOT at 2:1 rate → gets 50 stDOT
@@ -141,8 +143,9 @@ contract PolkaVaultTest is Test {
         vm.prank(alice);
         vault.deposit{value: 100 * ONE_DOT}();
 
-        // Compound 100 DOT → rate 2:1. Alice's 100 stDOT is now worth 200 DOT.
-        vault.compound{value: 100 * ONE_DOT}();
+        // Simulate 100 DOT rewards → rate 2:1. Alice's 100 stDOT is now worth 200 DOT.
+        vm.deal(address(vault), 100 * ONE_DOT);
+        vault.compound();
 
         vm.prank(alice);
         vault.requestWithdraw(100 * ONE_DOT); // redeem all shares
@@ -212,8 +215,9 @@ contract PolkaVaultTest is Test {
         // Both deposited at 1:1 → equal shares
         assertEq(vault.balanceOf(alice), vault.balanceOf(bob));
 
-        // Compound 100 DOT → rate is now 1.5:1 (300 staked / 200 supply)
-        vault.compound{value: 100 * ONE_DOT}();
+        // Simulate 100 DOT rewards → rate is now 1.5:1 (300 staked / 200 supply)
+        vm.deal(address(vault), 100 * ONE_DOT);
+        vault.compound();
 
         // Both hold equal shares → equal DOT value
         assertEq(vault.dotForShares(vault.balanceOf(alice)), vault.dotForShares(vault.balanceOf(bob)));
@@ -223,8 +227,9 @@ contract PolkaVaultTest is Test {
         vm.prank(alice);
         vault.deposit{value: 100 * ONE_DOT}();
 
-        // Compound 100 DOT → rate 2:1
-        vault.compound{value: 100 * ONE_DOT}();
+        // Simulate 100 DOT rewards → rate 2:1
+        vm.deal(address(vault), 100 * ONE_DOT);
+        vault.compound();
 
         vm.prank(bob);
         vault.deposit{value: 100 * ONE_DOT}(); // gets 50 stDOT
@@ -241,7 +246,8 @@ contract PolkaVaultTest is Test {
     function test_getVaultStats() public {
         vm.prank(alice);
         vault.deposit{value: 100 * ONE_DOT}();
-        vault.compound{value: 10 * ONE_DOT}();
+        vm.deal(address(vault), 10 * ONE_DOT);
+        vault.compound();
 
         (uint256 rate, uint256 staked, uint256 unbonding, uint256 supply) = vault.getVaultStats();
 
@@ -254,7 +260,8 @@ contract PolkaVaultTest is Test {
     function test_getUserPosition() public {
         vm.prank(alice);
         vault.deposit{value: 100 * ONE_DOT}();
-        vault.compound{value: 100 * ONE_DOT}(); // rate → 2:1
+        vm.deal(address(vault), 100 * ONE_DOT);
+        vault.compound(); // rate → 2:1
 
         (uint256 stDotBal, uint256 dotVal) = vault.getUserPosition(alice);
         assertEq(stDotBal, 100 * ONE_DOT);
@@ -445,14 +452,16 @@ contract PolkaVaultTest is Test {
         vault.setKeeperFee(100); // 1%
 
         address keeper = makeAddr("keeper");
-        vm.deal(keeper, 10 * ONE_DOT + 0.1 ether); // gas + compound value
+
+        // Simulate 10 DOT staking rewards arriving in contract
+        vm.deal(address(vault), 10 * ONE_DOT);
 
         uint256 balBefore = keeper.balance;
         vm.prank(keeper);
-        vault.compound{value: 10 * ONE_DOT}();
+        vault.compound();
 
         // 1% of 10 DOT = 0.1 DOT paid to keeper
-        assertEq(keeper.balance - (balBefore - 10 * ONE_DOT), 0.1 ether);
+        assertEq(keeper.balance - balBefore, 0.1 ether);
         // Only 9.9 DOT bonded
         assertEq(vault.totalStaked(), 109.9 ether);
     }
@@ -461,8 +470,9 @@ contract PolkaVaultTest is Test {
         vm.prank(alice);
         vault.deposit{value: 100 * ONE_DOT}();
 
-        // keeperFeeBps defaults to 0 — all value bonded
-        vault.compound{value: 5 * ONE_DOT}();
+        // keeperFeeBps defaults to 0 — all rewards bonded
+        vm.deal(address(vault), 5 * ONE_DOT);
+        vault.compound();
         assertEq(vault.totalStaked(), 105 * ONE_DOT);
     }
 
@@ -486,7 +496,8 @@ contract PolkaVaultTest is Test {
         vm.prank(alice);
         vault.deposit{value: 100 * ONE_DOT}();
         // First compound sets baseline but can't compute APY yet
-        vault.compound{value: 10 * ONE_DOT}();
+        vm.deal(address(vault), 10 * ONE_DOT);
+        vault.compound();
         assertEq(vault.lastApyBps(), 0);
     }
 
@@ -495,14 +506,16 @@ contract PolkaVaultTest is Test {
         vault.deposit{value: 100 * ONE_DOT}();
 
         // First compound at T=0 — sets baseline: rate = 1.1e18
-        vault.compound{value: 10 * ONE_DOT}();
+        vm.deal(address(vault), 10 * ONE_DOT);
+        vault.compound();
 
         // Advance exactly 365 days
         vm.warp(block.timestamp + 365 days);
 
         // Second compound: 10% of totalStaked (110) = 11 DOT → rate goes to 1.21e18
         // Growth = (1.21 - 1.1) / 1.1 = 0.1 = 10% in 365 days → APY = 1000 bps
-        vault.compound{value: 11 * ONE_DOT}();
+        vm.deal(address(vault), 11 * ONE_DOT);
+        vault.compound();
 
         assertEq(vault.lastApyBps(), 1000); // exactly 10% APY
     }
@@ -512,7 +525,8 @@ contract PolkaVaultTest is Test {
         vault.deposit{value: 100 * ONE_DOT}();
 
         uint256 t = block.timestamp;
-        vault.compound{value: 5 * ONE_DOT}();
+        vm.deal(address(vault), 5 * ONE_DOT);
+        vault.compound();
 
         assertEq(vault.lastCompoundTime(), t);
     }
@@ -529,9 +543,11 @@ contract PolkaVaultTest is Test {
         vm.prank(alice);
         vault.deposit{value: 100 * ONE_DOT}();
 
-        vault.compound{value: 10 * ONE_DOT}();
+        vm.deal(address(vault), 10 * ONE_DOT);
+        vault.compound();
         vm.warp(block.timestamp + 365 days);
-        vault.compound{value: 11 * ONE_DOT}();
+        vm.deal(address(vault), 11 * ONE_DOT);
+        vault.compound();
 
         // Cross-VM path should give same 10% APY = 1000 bps
         assertEq(vault.lastApyBps(), 1000);
@@ -547,9 +563,11 @@ contract PolkaVaultTest is Test {
 
         vm.prank(alice);
         vault.deposit{value: 100 * ONE_DOT}();
-        vault.compound{value: 10 * ONE_DOT}();
+        vm.deal(address(vault), 10 * ONE_DOT);
+        vault.compound();
         vm.warp(block.timestamp + 365 days);
-        vault.compound{value: 11 * ONE_DOT}();
+        vm.deal(address(vault), 11 * ONE_DOT);
+        vault.compound();
 
         assertEq(vault.lastApyBps(), 1000); // still works via fallback
     }
