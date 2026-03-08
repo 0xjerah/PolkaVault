@@ -325,7 +325,6 @@ Open [http://localhost:3000](http://localhost:3000). Connect a wallet configured
 - **XCM Cross-Chain** — send PAS to Relay Chain with destination account input
 - **Cross-VM Flow Diagram** — interactive visual: Solidity → pallet-revive → Rust PVM → Result
 - **Precompile Info** — technical breakdown of each precompile with function badges
-- **Scrolling Ticker** — feature marquee with gradient fade edges
 
 ---
 

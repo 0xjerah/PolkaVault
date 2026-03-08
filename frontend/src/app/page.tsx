@@ -160,40 +160,6 @@ function Background() {
   );
 }
 
-// ─── Ticker ───────────────────────────────────────────────────────────────────
-
-function Ticker() {
-  const items = [
-    "Staking Precompile (0x0804)",
-    "XCM V5 InitiateTeleport",
-    "Cross-VM: Solidity + Rust PVM",
-    "pallet-revive",
-    "Native PAS Staking",
-    "No Oracle Required",
-    "No Bridging",
-    "No Off-chain Relayer",
-    "ERC-20 stDOT",
-    "Polkadot Hub Testnet",
-    "Auto-Compounding Yield",
-    "Keeper Fee 0.5%",
-  ];
-
-  return (
-    <div className="relative h-7 overflow-hidden border-b border-[var(--border)] bg-[var(--surface2)] flex items-center">
-      {/* Fade edges */}
-      <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[var(--surface2)] to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[var(--surface2)] to-transparent z-10 pointer-events-none" />
-      <div className="flex gap-10 whitespace-nowrap" style={{ animation: "ticker 45s linear infinite" }}>
-        {[...items, ...items].map((t, i) => (
-          <span key={i} className="text-[10px] text-[var(--muted)] tracking-wider">
-            <span className="inline-block w-1 h-1 rounded-full bg-[var(--pink)] mr-2 align-middle" />{t}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── Nav ──────────────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
@@ -1415,7 +1381,6 @@ export default function Home() {
       <Background />
       <main className="min-h-screen">
         <Nav />
-        <Ticker />
         <Hero />
         <ValidatorAdmin />
         <Dashboard />
