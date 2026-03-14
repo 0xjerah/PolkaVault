@@ -836,6 +836,11 @@ function CompoundPanel({ onSuccess }: { onSuccess: () => void }) {
 
 // ─── Validator Admin ──────────────────────────────────────────────────────────
 
+const PASEO_VALIDATORS = [
+  "0xe4b1fbe4f25d751d4b239615a2ebee64fe75f9a45fad6ce083a0f1383897a428",
+  "0xba5ecc6673cf03dd80a61008afb799b7f6bf74fab64795a0062bf2aa94df067b",
+];
+
 function ValidatorAdmin() {
   const { address } = useAccount();
   const [rows, setRows] = useState<string[]>([""]);
@@ -908,10 +913,16 @@ function ValidatorAdmin() {
                 )}
               </div>
             ))}
-            <button onClick={addRow}
-              className="flex items-center gap-1 font-mono text-[10px] text-[var(--muted)] hover:text-purple-400 transition-colors px-1 py-1 cursor-pointer">
-              <Plus className="w-3 h-3" /> Add validator
-            </button>
+            <div className="flex items-center gap-3">
+              <button onClick={addRow}
+                className="flex items-center gap-1 font-mono text-[10px] text-[var(--muted)] hover:text-purple-400 transition-colors px-1 py-1 cursor-pointer">
+                <Plus className="w-3 h-3" /> Add validator
+              </button>
+              <button onClick={() => setRows([...PASEO_VALIDATORS])}
+                className="flex items-center gap-1 font-mono text-[10px] text-amber-500/70 hover:text-amber-400 transition-colors px-1 py-1 cursor-pointer">
+                Prefill Paseo Validators
+              </button>
+            </div>
           </div>
 
           <button
