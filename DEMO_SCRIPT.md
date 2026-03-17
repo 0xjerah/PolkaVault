@@ -1,146 +1,282 @@
-# PolkaVault — Demo Script
+# PolkaVault — Demo Video Script
 
-**Target length:** 4-5 minutes
-**Format:** Screen recording with voiceover (or text overlay)
-
----
-
-## Scene 1: Hook (0:00 – 0:20)
-
-**Show:** PolkaVault landing page hero section
-
-**Say:**
-> "What if you could stake DOT, earn yield, and move assets cross-chain — all from a single smart contract on Polkadot Hub? No oracles. No bridges. No off-chain relayers. Meet PolkaVault — native liquid staking powered by precompiles and cross-VM Rust contracts."
+**Total length:** ~4 minutes (aim for 3:30–4:30)
+**Format:** Screen-recorded clips stitched together, with text overlays (no voiceover needed)
+**Resolution:** 1080p minimum
+**Music:** Lo-fi or ambient electronic (optional, low volume)
 
 ---
 
-## Scene 2: The Problem (0:20 – 0:40)
+## Pre-Recording Checklist
 
-**Show:** Brief slide or text overlay
+Do these **before** you hit record:
 
-**Say:**
-> "Today, liquid staking on Polkadot requires external protocols with oracles, bridges, and centralized relayers. PolkaVault eliminates all of that by building directly on Polkadot Hub's native precompiles — the Staking precompile for bonding, the XCM precompile for cross-chain, and a Rust PolkaVM contract for APY computation. Everything happens on-chain."
-
----
-
-## Scene 3: Connect Wallet (0:40 – 1:00)
-
-**Action:** Click "Connect Wallet" on the navbar → select MetaMask → connect to Polkadot Hub Testnet (chain 420420417)
-
-**Show:** Wallet connects, navbar updates with connected address, live exchange rate pill appears
-
-**Say:**
-> "Let's connect a wallet. We're on Polkadot Hub Testnet — chain ID 420420417. Notice the live exchange rate in the navbar — that's reading directly from the deployed smart contract."
+- [ ] Wallet connected to Polkadot Hub Testnet (chain 420420417) with 20+ PAS
+- [ ] PolkaVault app running at `localhost:3000`, fresh page load
+- [ ] Blockscout tab open: `https://blockscout-testnet.polkadot.io/address/0x64D3EfbAde442779c68972D5079861Bcf16722E6`
+- [ ] Nominate validators already done (so staking is active)
+- [ ] One withdrawal already requested 1+ hour ago (so you can show "Claim" live)
+- [ ] Terminal ready with `forge test` command typed
+- [ ] Clear browser cache for clean load
+- [ ] Hide bookmarks bar, close other tabs
 
 ---
 
-## Scene 4: Vault Stats (1:00 – 1:20)
+## CLIP 1 — The Hook (10–15 sec)
 
-**Action:** Scroll to the stats strip and Rate Hero Card
+**What to record:** Nothing — this is a title card you'll add in editing.
 
-**Show:** TVL, exchange rate, stDOT supply, depositor count. Rate Hero Card with animated glow.
+**Text overlay:**
+```
+PolkaVault
+Native Liquid Staking on Polkadot Hub
 
-**Say:**
-> "Here's the vault at a glance. Total Value Locked, current exchange rate, total stDOT supply, and unique depositor count — all pulled live from on-chain. The exchange rate starts at 1:1 and only increases as rewards compound."
+Stake PAS. Get stDOT. Earn yield. Go cross-chain.
+
+No bridges. No oracles. No off-chain bots.
+Built entirely on Polkadot Hub precompiles + PVM.
+```
+
+**Tip:** Use a dark background with the PolkaVault logo or a slow zoom on the hero section.
 
 ---
 
-## Scene 5: Deposit (1:20 – 2:00)
+## CLIP 2 — The Problem We Solve (10–15 sec)
 
-**Action:**
-1. Scroll to the Deposit panel
-2. Enter an amount (e.g., 5 PAS)
-3. See the preview: "You'll receive X stDOT"
-4. Click "Deposit"
+**What to record:** Text card or simple slide (edit in post).
+
+**Text overlay:**
+```
+The Problem:
+
+Liquid staking on Polkadot today needs
+external oracles, bridges, and relayers.
+
+PolkaVault does it natively —
+using only what Polkadot Hub gives you.
+```
+
+---
+
+## CLIP 3 — Connect Wallet (15–20 sec)
+
+**What to record:**
+1. Show the landing page (hero + stats strip)
+2. Click "Connect Wallet" in navbar
+3. Select MetaMask → approve connection
+4. Show the navbar update: address appears, network shows "Polkadot Hub Testnet"
+
+**Text overlay:**
+```
+Connecting to Polkadot Hub Testnet
+Chain ID: 420420417 | Currency: PAS
+```
+
+**After connecting, briefly hover over the stats strip** (TVL, Exchange Rate, stDOT Supply, Depositors).
+
+---
+
+## CLIP 4 — Deposit PAS → Get stDOT (30–40 sec)
+
+**This is the money clip. Go slow, let it breathe.**
+
+**What to record:**
+1. Click the **Deposit** tab
+2. Show your PAS balance in the input area
+3. Type `5` (or click a preset like 25%)
+4. Point out the preview: _"You'll receive X stDOT at rate Y"_
+5. Click **"Deposit 5 PAS"**
+6. MetaMask popup → confirm
+7. Wait for confirmation (loading spinner → checkmark)
+8. Show updated **Position Summary**: stDOT balance, PAS value, earnings
+
+**Text overlays (timed):**
+```
+→ Depositing 5 PAS into PolkaVault
+
+→ Under the hood:
+  contract calls Staking precompile (0x0804)
+  bond(value, payee=Stash)
+  PAS goes directly into substrate staking
+
+→ stDOT minted at current exchange rate
+  Liquid. Transferable. ERC-20.
+
+→ Position updated ✓
+```
+
+**Bonus:** After the tx confirms, open the Blockscout tab and show the transaction — point out the Deposited event log.
+
+---
+
+## CLIP 5 — Nominate Validators (15–20 sec)
+
+**What to record:**
+1. Scroll down to the **"Nominate Validators"** panel (Owner Only)
+2. Click **"Prefill Paseo Validators"** — both fields auto-fill
+3. Click **"Nominate 2 Validators"**
+4. Confirm in MetaMask
+5. Show the "Currently Nominating (2)" section appear
+
+**Text overlay:**
+```
+→ Nominating Paseo relay chain validators
+  PAS is now backing real validators
+  Staking rewards will accrue to the vault
+```
+
+**Note:** If you already nominated before recording, just show the "Currently Nominating" section instead. The point is to show it exists.
+
+---
+
+## CLIP 6 — Compound Rewards + Cross-VM (40–50 sec)
+
+**This is the KEY clip. The judges care about this.**
+
+**What to record:**
+1. Click the **Compound** tab
+2. Point out: _no amount input_ — the vault reads accrued rewards automatically
+3. Show the "Auto-Harvest from Staking Rewards" info box
+4. Click **"Compound Rewards"**
 5. Confirm in MetaMask
-6. Wait for tx confirmation
-7. Show updated Position Summary (stDOT balance, PAS value)
+6. Watch: exchange rate increases, APY updates
+7. Scroll to the **Cross-VM Architecture** diagram section
 
-**Show:** Transaction hash, Blockscout link, updated balances
+**Text overlays (timed):**
+```
+→ compound() reads address(this).balance
+  Staking rewards accrued via payee=Stash
 
-**Say:**
-> "Let's deposit 5 PAS. The contract calls the Staking precompile at address 0x0804 to bond our PAS directly to the vault's stash. We receive stDOT — a liquid ERC-20 receipt token at the current exchange rate. Notice — no wrapping, no bridging. Raw native PAS goes straight into substrate staking."
+→ 0.5% keeper fee paid to caller
+  Remaining rewards bonded via bondExtra()
+  Exchange rate increases for ALL stDOT holders
 
-**Bonus — show on Blockscout:**
-> "Here's the transaction on Blockscout. You can see the deposit event with the exact shares minted."
+→ CROSS-VM CALL:
+  Solidity (EVM) → pallet-revive → Rust (PolkaVM)
+  YieldOptimizer computes APY from rate growth
+  u128 arithmetic | 2,089-byte RISC-V binary
 
----
+→ Two virtual machines. One seamless call.
+  Deployed on Polkadot Hub Testnet.
+```
 
-## Scene 6: Compound + Cross-VM (2:00 – 3:00) ← KEY DEMO MOMENT
+**Then show the Cross-VM diagram on the page** — pause on it for 3-4 seconds so judges can read the flow:
+`Solidity Vault → pallet-revive → Rust YieldOptimizer → APY result`
 
-**Action:**
-1. Scroll to the Compound panel
-2. Show the current exchange rate and APY
-3. Point out: "No amount input — the contract reads accrued rewards automatically"
-4. Click "Compound Rewards"
-5. Confirm in MetaMask
-6. Show exchange rate increase + APY update
-
-**Show:** Cross-VM flow diagram lights up: Solidity → pallet-revive → Rust PVM → Result
-
-**Say:**
-> "This is the core innovation. Notice there's no amount to enter — the vault uses payee=Stash, so staking rewards accrue directly to the contract's balance. When compound is called, the contract does three things:
-> First, it reads address(this).balance — the accrued staking rewards sitting in the contract.
-> Second, it takes 0.5% as a keeper fee and bonds the rest via bondExtra on the Staking precompile. This increases the exchange rate for ALL stDOT holders — no action required on their part.
-> Third — and this is the Track 2 cross-VM demo — it calls our Rust YieldOptimizer contract deployed on PolkaVM. The Solidity EVM contract calls a Rust RISC-V contract through pallet-revive's transparent VM routing. The Rust contract computes the annualized APY from exchange rate growth and returns it on-chain.
-> This is real cross-VM interoperability — not a mock, not a simulation. Two different virtual machines, one seamless call."
-
-**Show on Blockscout:** The compound transaction, pointing out the cross-contract call to the YieldOptimizer address `0x7d849...`
+**Bonus:** Show the compound tx on Blockscout — point out the internal call to `0x7d849b045d89a489df71c2e69968eb020a233974` (the Rust contract).
 
 ---
 
-## Scene 7: Withdraw (3:00 – 3:30)
+## CLIP 7 — Withdraw (20–25 sec)
 
-**Action:**
-1. Go to Withdraw panel
-2. Enter stDOT amount
-3. Click "Request Withdraw"
-4. Show the pending withdrawal with unbonding timer (1 hour on testnet)
-5. (If pre-prepared) Click "Claim" on an already-matured withdrawal
+**What to record:**
+1. Click the **Withdraw** tab
+2. Enter an stDOT amount
+3. Click **"Request Withdraw"** → confirm in MetaMask
+4. Show the pending withdrawal with unbonding countdown
+5. **If you have a pre-matured withdrawal:** Click **"Claim"** and show PAS returned
 
-**Say:**
-> "Withdrawals use the Staking precompile's unbond function. There's a 28-day unbonding period on mainnet — 1 hour on testnet. Once matured, claim your PAS. The contract burns your stDOT and sends PAS back at the current exchange rate — which has grown since you deposited."
+**Text overlay:**
+```
+→ Withdraw burns stDOT, calls unbond() on Staking precompile
+  28-day unbonding on mainnet | 1 hour on testnet
 
----
-
-## Scene 8: XCM Cross-Chain (3:30 – 4:00)
-
-**Action:**
-1. Go to the XCM / Cross-Chain panel
-2. Enter shares + a Relay Chain destination account
-3. Click "Send Cross-Chain"
-4. Show the XCM message preview (SCALE-encoded bytes)
-
-**Say:**
-> "PolkaVault can also teleport PAS to the Relay Chain via XCM V5. The contract hand-crafts a SCALE-encoded XCM message with WithdrawAsset, InitiateTeleport, BuyExecution, and DepositAsset — all in Solidity. This goes through the XCM precompile at 0x0A0000. No bridge. No relayer. Native Polkadot cross-chain messaging."
+→ After unbonding: claim your PAS
+  You receive MORE PAS than you deposited
+  (exchange rate grew from compounding)
+```
 
 ---
 
-## Scene 9: Architecture Recap (4:00 – 4:20)
+## CLIP 8 — XCM Cross-Chain (20–25 sec)
 
-**Show:** The Cross-VM flow diagram section + Precompile Info section
+**What to record:**
+1. Click the **Cross-Chain** tab
+2. Enter stDOT amount + a relay chain destination address
+3. Show the SCALE-encoded XCM message preview
+4. Click **"Send Cross-Chain"** (or just show the UI if you don't want to spend tokens)
 
-**Say:**
-> "To recap — PolkaVault uses three Polkadot Hub precompiles: Staking for bonding, XCM for cross-chain, and Balances for native PAS access. APY computation runs on a Rust contract compiled to RISC-V on PolkaVM. This is Track 2 in action — native assets, precompiles, and cross-VM, all working together in a real deployed protocol."
+**Text overlay:**
+```
+→ XCM V5 teleport to Relay Chain
+  SCALE-encoded in Solidity:
+  WithdrawAsset → InitiateTeleport → BuyExecution → DepositAsset
+
+→ XCM precompile at 0x0A0000
+  No bridge. No relayer. Native Polkadot messaging.
+```
 
 ---
 
-## Scene 10: Tests + Close (4:20 – 4:40)
+## CLIP 9 — Architecture & Precompiles (15–20 sec)
 
-**Show:** Terminal running `forge test -vv` → 43/43 passing
+**What to record:** Slowly scroll through:
+1. **"How It Works"** section (4-step flow)
+2. **Precompile Info** section (Staking, XCM, Balances addresses)
+3. Pause briefly on each so judges can read
 
-**Say:**
-> "43 out of 43 tests passing. Exchange rate math, full withdraw lifecycle, ERC-20 compliance, XCM message construction, keeper fees, APY computation, and cross-VM integration — all tested with mocked precompiles at their real addresses.
-> PolkaVault. Native liquid staking. Built on Polkadot Hub. Thank you."
+**Text overlay:**
+```
+→ Three precompiles. One Rust PVM contract.
+  Everything on-chain. Everything verifiable.
+```
 
 ---
 
-## Pre-Demo Preparation Checklist
+## CLIP 10 — Tests (15–20 sec)
 
-- [ ] Wallet connected to Polkadot Hub Testnet with PAS balance
-- [ ] Fresh browser tab with `localhost:3000` loaded
-- [ ] Blockscout tab open at the contract address
-- [ ] Terminal ready with `forge test -vv` command
-- [ ] One pre-matured withdrawal ready to claim (optional — submit requestWithdraw 1+ hour before recording)
-- [ ] Screen recording software set to 1080p or higher
-- [ ] Clear browser cache to show fresh load experience
+**What to record:**
+1. Switch to terminal
+2. Run `forge test -vv`
+3. Show all 43 tests passing (green output)
+
+**Text overlay:**
+```
+→ 43/43 tests passing
+  Exchange rate math ✓
+  Full withdraw lifecycle ✓
+  XCM message construction ✓
+  Cross-VM APY computation ✓
+  Keeper fees ✓
+  ERC-20 compliance ✓
+```
+
+---
+
+## CLIP 11 — Close (10 sec)
+
+**What to record:** Title card (add in editing).
+
+**Text overlay:**
+```
+PolkaVault
+Native Liquid Staking on Polkadot Hub
+
+Track 2: PVM Smart Contracts
+Polkadot OpenGuild Hackathon 2026
+
+github.com/[your-repo]
+```
+
+---
+
+## Editing Tips
+
+| Tip | Why |
+|---|---|
+| Cut dead time (MetaMask loading, tx confirming) | Keep it snappy — speed up 2-4x during waits |
+| Use zoom/crop on key UI elements | Judges watch on small screens — make text readable |
+| Clip 6 (Compound + Cross-VM) gets the most time | This is your differentiator. Let it breathe. |
+| Add a subtle transition between clips | Simple fade or cut — nothing flashy |
+| Consistent text overlay position | Bottom-left or bottom-center, semi-transparent background |
+| Show Blockscout after Deposit and Compound | Proves it's real, not a mock |
+
+## Recording Order (optimize your time)
+
+1. **First:** Request a withdrawal (so it matures while you record other clips)
+2. **Record Clips 3-6** in order (Connect → Deposit → Nominate → Compound)
+3. **Record Clip 7** (Claim the matured withdrawal)
+4. **Record Clip 8** (XCM)
+5. **Record Clip 9** (scroll architecture sections)
+6. **Record Clip 10** (terminal tests)
+7. **Add Clips 1, 2, 11 in editing** (title cards)
